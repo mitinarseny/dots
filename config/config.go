@@ -3,6 +3,7 @@ package config
 type Link struct {
 	Source string
 	Target string
+	Force  bool
 }
 
 type Variable struct {
@@ -18,7 +19,10 @@ type Config struct {
 func (c *Config) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var aux struct {
 		Variables map[string]string
-		Links     map[string]string
+		Links     map[string]struct {
+			Path  string
+			Force bool
+		}
 	}
 
 	if err := unmarshal(&aux); err != nil {
@@ -34,8 +38,9 @@ func (c *Config) UnmarshalYAML(unmarshal func(interface{}) error) error {
 
 	for t, s := range aux.Links {
 		c.Links = append(c.Links, Link{
-			Source: s,
 			Target: t,
+			Source: s.Path,
+			Force:  s.Force,
 		})
 	}
 

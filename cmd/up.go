@@ -89,11 +89,11 @@ func up() {
 			log.Fatalf("An error occured while trying to get absolete path of '%v': %v", t, err.Error())
 		}
 
-		if err := symlink(absSource, absTarget, true); err != nil {
+		if err := symlink(absSource, absTarget, l.Force); err != nil {
 			log.Fatalf("An error occured while making symlink '%v' -> '%v': %v", absSource, absTarget, err.Error())
 		}
 
-		log.Printf("Symlinked successfully: '%v' -> '%v'", absSource, absTarget)
+		log.Printf("Symlink successfully created: '%v' -> '%v'", absSource, absTarget)
 	}
 }
 
