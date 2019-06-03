@@ -15,7 +15,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	. "github.com/mitinarseny/dots/config"
 	"github.com/spf13/cobra"
@@ -60,14 +59,14 @@ func up() {
 		log.Fatalf("An error occured while parsing '%v': %v", cfgFile, err.Error())
 	}
 
-	log.Println("Setting variables...")
+	fmt.Println("Setting variables...")
 	for _, v := range c.Variables {
 		if err := os.Setenv(v.Name, v.Value); err != nil {
 			log.Fatalf("An error occured while setting '$%v=%v': %v", v.Name, v.Value, err.Error())
 		}
+		fmt.Printf("Variable was successfully set: %v=%v", v.Name, v.Value)
 	}
-	log.Println("All variables are set...")
-
+	fmt.Println("Creating symlinks...")
 	for _, l := range c.Links {
 		s, err := tilde.Expand(l.Source)
 		if err != nil {
@@ -89,28 +88,32 @@ func up() {
 			log.Fatalf("An error occured while trying to get absolete path of '%v': %v", t, err.Error())
 		}
 
-		if err := symlink(absSource, absTarget, l.Force); err != nil {
-			log.Fatalf("An error occured while making symlink '%v' -> '%v': %v", absSource, absTarget, err.Error())
+		if _, err := os.Stat(absSource); os.IsNotExist(err) {
+			log.Fatalf("Symlink source '%v' does not exist", absSource)
+		}
+		if _, err := os.Stat(absTarget); err == nil {
+			fmt.Printf("Symlink source already exists: '%v' -> ", absTarget)
+			if !l.Force {
+				fmt.Println("omitted")
+			} else {
+				if err := os.Remove(absTarget); err != nil {
+					log.Fatalf("An error occurred while removing existing target '%v': %v", absSource, err.Error())
+				} else {
+					fmt.Println("removed")
+				}
+
+				if err := os.Symlink(absSource, absTarget); err != nil {
+					log.Fatalf("An error occured while creating symlink '%v' -> '%v': %v", absSource, absTarget, err.Error())
+				}
+				fmt.Printf("Symlink was successfully created: '%v' -> '%v'\n", absSource, absTarget)
+			}
+		} else {
+			if err := os.Symlink(absSource, absTarget); err != nil {
+				log.Fatalf("An error occured while creating symlink '%v' -> '%v': %v", absSource, absTarget, err.Error())
+			}
+			fmt.Printf("Symlink was successfully created: '%v' -> '%v'\n", absSource, absTarget)
 		}
 
-		log.Printf("Symlink successfully created: '%v' -> '%v'", absSource, absTarget)
-	}
-}
 
-func symlink(source, target string, force bool) error {
-	if _, err := os.Stat(source); os.IsNotExist(err) {
-		return errors.New(fmt.Sprintf("Symlink source '%v' does not exist", source))
 	}
-	if _, err := os.Stat(target); err == nil {
-		if !force {
-			return errors.New(fmt.Sprintf("Symlink target '%v' already exists", target))
-		}
-		if err := os.Remove(target); err != nil {
-			return err
-		}
-	}
-	if err := os.Symlink(source, target); err != nil {
-		return err
-	}
-	return nil
 }
