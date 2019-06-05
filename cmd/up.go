@@ -16,20 +16,29 @@ package cmd
 
 import (
 	"fmt"
-	. "github.com/mitinarseny/dots/config"
 	"github.com/spf13/cobra"
-	"gopkg.in/mattes/go-expand-tilde.v1"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
-	"log"
 	"os"
-	"path/filepath"
 )
 
 // upCmd represents the up command
 var upCmd = &cobra.Command{
 	Use:   "up",
 	Short: "Install dotfiles",
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		data, err := ioutil.ReadFile(cfgFile)
+		if err != nil {
+			errLogger.Fatalf("An error occurred while openning file '%v': %v", cfgFile, err.Error())
+		}
+		dc.Source = cfgFile
+		if err := yaml.Unmarshal(data, &dc); err != nil {
+			errLogger.Fatalf("An error occurred while parsing '%v': %v", cfgFile, err.Error())
+		}
+		if err := dc.Revise(); err != nil {
+			errLogger.Fatalln("An error occurred while revising ", err.Error())
+		}
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		up()
 	},
@@ -49,71 +58,64 @@ func init() {
 	// upCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
+func center(s string, w int) string {
+	return fmt.Sprintf("%[1]*s", -w, fmt.Sprintf("%[1]*s", (w+len(s))/2, s))
+}
+
+func left(s string, w int) string {
+	return fmt.Sprintf("%[1]*s", -w, s)
+}
+
 func up() {
-	data, err := ioutil.ReadFile(cfgFile)
-	if err != nil {
-		log.Fatalf("An error occured while opening file '%v': %v", cfgFile, err.Error())
-	}
-	var c Config
-	if err := yaml.Unmarshal(data, &c); err != nil {
-		log.Fatalf("An error occured while parsing '%v': %v", cfgFile, err.Error())
-	}
-
-	fmt.Println("Setting variables...")
-	for _, v := range c.Variables {
-		if err := os.Setenv(v.Name, v.Value); err != nil {
-			log.Fatalf("An error occured while setting '$%v=%v': %v", v.Name, v.Value, err.Error())
-		}
-		fmt.Printf("Variable was successfully set: %v=%v", v.Name, v.Value)
-	}
 	fmt.Println("Creating symlinks...")
-	for _, l := range c.Links {
-		s, err := tilde.Expand(l.Source)
-		if err != nil {
-			log.Fatalf("An error occured while resolving '%v': %v", l.Source, err.Error())
-		}
-		s = os.ExpandEnv(s)
-		absSource, err := filepath.Abs(s)
-		if err != nil {
-			log.Fatalf("An error occured while trying to get absolete path of '%v': %v", s, err.Error())
-		}
 
-		t, err := tilde.Expand(l.Target)
-		if err != nil {
-			log.Fatalf("An error occured while resolving '%v': %v", l.Target, err.Error())
+	//w := tabwriter.NewWriter(os.Stdout, 0, 0, 0, ' ', 0)
+	// find tab sizes
+	var (
+		maxTargetWidth int
+		maxSourceWidth int
+		maxStageWidth  = 11
+	)
+	for _, l := range dc.Links {
+		if len(l.Target.Original) > maxTargetWidth {
+			maxTargetWidth = len(l.Target.Original)
 		}
-		t = os.ExpandEnv(t)
-		absTarget, err := filepath.Abs(t)
-		if err != nil {
-			log.Fatalf("An error occured while trying to get absolete path of '%v': %v", t, err.Error())
+		if len(l.Source.Original) > maxSourceWidth {
+			maxSourceWidth = len(l.Source.Original)
 		}
-
-		if _, err := os.Stat(absSource); os.IsNotExist(err) {
-			log.Fatalf("Symlink source '%v' does not exist", absSource)
-		}
-		if _, err := os.Stat(absTarget); err == nil {
-			fmt.Printf("Symlink source already exists: '%v' -> ", absTarget)
-			if !l.Force {
-				fmt.Println("omitted")
-			} else {
-				if err := os.Remove(absTarget); err != nil {
-					log.Fatalf("An error occurred while removing existing target '%v': %v", absSource, err.Error())
-				} else {
-					fmt.Println("removed")
-				}
-
-				if err := os.Symlink(absSource, absTarget); err != nil {
-					log.Fatalf("An error occured while creating symlink '%v' -> '%v': %v", absSource, absTarget, err.Error())
-				}
-				fmt.Printf("Symlink was successfully created: '%v' -> '%v'\n", absSource, absTarget)
-			}
-		} else {
-			if err := os.Symlink(absSource, absTarget); err != nil {
-				log.Fatalf("An error occured while creating symlink '%v' -> '%v': %v", absSource, absTarget, err.Error())
-			}
-			fmt.Printf("Symlink was successfully created: '%v' -> '%v'\n", absSource, absTarget)
-		}
-
-
 	}
+	maxTargetWidth += 2
+	maxSourceWidth += 2
+
+	for _, l := range dc.Links {
+		fmt.Print(fmt.Sprintf("%s\t<-\t %s\t|", left(l.Target.Original, maxTargetWidth), left(l.Source.Original, maxSourceWidth)))
+		var targetBackup []byte
+		if _, err := os.Lstat(l.Target.Absolute); err == nil {
+			if !l.Force {
+				fmt.Println(left("\t->\tomitted", maxStageWidth))
+				continue
+			} else {
+				// backup
+				//targetBackup, err = ioutil.ReadFile(l.Target.Absolute)
+				//if err != nil {
+				//	fmt.Printf(" -> failed to backup: %v\n", err.Error())
+				//	continue
+				//}
+				if err := os.Remove(l.Target.Absolute); err != nil {
+					fmt.Printf("\t->\tfailed to remove: %v\n", err.Error())
+					continue
+				}
+				fmt.Print(left("\t->\tremoved", maxStageWidth))
+			}
+		}
+		if err := os.Symlink(l.Source.Relative, l.Target.Absolute); err != nil {
+			if targetBackup != nil {
+				//os.NewFile() TODO: restore
+			}
+			fmt.Printf("\t->\terror: %v\n", err.Error())
+			continue
+		}
+		fmt.Println("\t->\tcreated")
+	}
+	fmt.Println("Symlinks created!")
 }

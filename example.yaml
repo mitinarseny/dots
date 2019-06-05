@@ -1,2 +1,10 @@
 links:
-  ~/.zshrc: .zshrc
+  ~/.zshrc:
+    path: .zshrc
+    force: true
+  ~/.gitexcludes:
+    path: .gitexcludes
+    force: true
+  ~/.gitconfig:
+    path: .gitconfig
+    force: true

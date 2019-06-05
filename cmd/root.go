@@ -2,15 +2,18 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/mitinarseny/dots/config"
+	"log"
 	"os"
 
-	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 var (
-	cfgFile string
+	cfgFile   string
+	dc        config.DotfilesConfig
+	errLogger  = log.New(os.Stderr, "", 0)
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -40,26 +43,26 @@ func init() {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	if cfgFile != "" {
-		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
-	} else {
-		// Find home directory.
-		home, err := homedir.Dir()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		// Search config in home directory with name ".dots" (without extension).
-		viper.AddConfigPath(home)
-		viper.SetConfigName(".dots")
-	}
+	//if cfgFile != "" {
+	//	// Use config file from the flag.
+	//	viper.SetConfigFile(cfgFile)
+	//} else {
+	//	// Find home directory.
+	//	home, err := homedir.Dir()
+	//	if err != nil {
+	//		fmt.Println(err)
+	//		os.Exit(1)
+	//	}
+	//
+	//	// Search config in home directory with name ".dots" (without extension).
+	//	viper.AddConfigPath(home)
+	//	viper.SetConfigName(".dots")
+	//}
 
 	viper.AutomaticEnv() // read in environment variables that match
 
 	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
-	}
+	//if err := viper.ReadInConfig(); err == nil {
+	//	fmt.Println("Using config file:", viper.ConfigFileUsed())
+	//}
 }
