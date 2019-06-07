@@ -20,6 +20,7 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
+	"path/filepath"
 )
 
 var (
@@ -35,11 +36,10 @@ var upCmd = &cobra.Command{
 		if err != nil {
 			errLogger.Fatalf("An error occurred while openning file '%v': %v", cfgFile, err)
 		}
-		dc.Source = cfgFile
 		if err := yaml.Unmarshal(data, &dc); err != nil {
 			errLogger.Fatalf("An error occurred while parsing '%v': %v", cfgFile, err)
 		}
-		if err := dc.Revise(); err != nil {
+		if err := dc.Revise(filepath.Dir(cfgFile)); err != nil {
 			errLogger.Fatalln("An error occurred while revising ", err)
 		}
 	},
@@ -73,18 +73,6 @@ func left(s string, w int) string {
 
 func up() {
 	link()
-
-	//cmd := exec.Command("sh","-c",  "ls -la ~")
-	//var stdout, stderr bytes.Buffer
-	//cmd.Stdout = &stdout
-	//cmd.Stderr = &stderr
-	//err := cmd.Run()
-	//if err != nil {
-	//	log.Fatalf("cmd.Run() failed with %s\n", err)
-	//}
-	//outStr, errStr := string(stdout.Bytes()), string(stderr.Bytes())
-	//fmt.Printf("out:\n%s\nerr:\n%s\n", outStr, errStr)
-
 	// commands
 
 	//fmt.Printf("Executing commands (%d):\n", len(dc.Commands))
