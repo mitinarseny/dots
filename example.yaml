@@ -1,3 +1,5 @@
+variables: []
+
 links:
   ~/.zshrc:
     path: .zshrc
@@ -8,3 +10,51 @@ links:
   ~/.gitconfig:
     path: .gitconfig
     force: true
+  ~/.editorconfig:
+    path: .editorconfig
+    force: true
+  ~/.tmux.conf:
+    path: .tmux.conf
+    force: true
+  ~/.bat.conf:
+    path: .bat.conf
+    force: true
+
+commands:
+  - antibody bundle < .zsh_plugins.txt > ~/.zsh_plugins.sh
+  - bat cache --source .bat/ --build
+
+hosts:
+  macos:
+    variables: []
+
+    links:
+      ~/Library/Application Support/Sublime Text 3/Packages/User/Package Control.sublime-settings:
+        path: subl/Package Control.sublime-settings
+        force: true
+      ~/Library/Application Support/Sublime Text 3/Packages/User/Preferences.sublime-settings:
+        path: subl/Preferences.sublime-settings
+        force: true
+
+    commands:
+      - echo 1
+
+    defaults:
+      apps:
+        iTerm:
+          PrefsCustomFolder:
+            type: string
+            value: $DOTFILES/iterm2_profile
+          LoadPrefsFromCustomFolder:
+            type: bool
+            value: true
+        Safari:
+          # fix for BeardedSpice
+          AllowJavaScriptFromAppleEvents: 1
+      domains:
+        com.googlecode.iterm2:
+          PrefsCustomFolder: $DOTFILES/iterm2_profile
+          LoadPrefsFromCustomFolder:
+            type: bool
+            value: true
+      globals:

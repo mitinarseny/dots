@@ -15,15 +15,15 @@
 package cmd
 
 import (
-	"bufio"
 	"fmt"
+	"github.com/mitinarseny/dots/config"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 	"io/ioutil"
-	"math"
-	"os"
-	"os/exec"
-	"path"
+)
+
+var (
+	hostName string
 )
 
 // upCmd represents the up command
@@ -50,6 +50,7 @@ var upCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(upCmd)
+	upCmd.Flags().StringVarP(&hostName, "host_name", "H", "", "Host to use")
 
 	// Here you will define your flags and configuration settings.
 
@@ -71,58 +72,7 @@ func left(s string, w int) string {
 }
 
 func up() {
-	fmt.Println("Creating symlinks...")
-
-	//w := tabwriter.NewWriter(os.Stdout, 0, 0, 0, ' ', 0)
-	// find tab sizes
-	var (
-		maxTargetWidth int
-		maxSourceWidth int
-		maxStageWidth  = 11
-	)
-	for _, l := range dc.Links {
-		if len(l.Target.Original) > maxTargetWidth {
-			maxTargetWidth = len(l.Target.Original)
-		}
-		if len(l.Source.Original) > maxSourceWidth {
-			maxSourceWidth = len(l.Source.Original)
-		}
-	}
-	maxTargetWidth += 2
-	maxSourceWidth += 2
-
-	for _, l := range dc.Links {
-
-		fmt.Print(fmt.Sprintf("%s\t<-\t %s\t|", left(l.Target.Original, maxTargetWidth), left(l.Source.Original, maxSourceWidth)))
-		var targetBackup []byte
-		if _, err := os.Lstat(l.Target.Absolute); err == nil {
-			if !l.Force {
-				fmt.Println(left("\t->\tomitted", maxStageWidth))
-				continue
-			} else {
-				// backup
-				//targetBackup, err = ioutil.ReadFile(l.Target.Absolute)
-				//if err != nil {
-				//	fmt.Printf(" -> failed to backup: %v\n", err.Error())
-				//	continue
-				//}
-				if err := os.Remove(l.Target.Absolute); err != nil {
-					fmt.Printf("\t->\tfailed to remove: %v\n", err)
-					continue
-				}
-				fmt.Print(left("\t->\tremoved", maxStageWidth))
-			}
-		}
-		if err := os.Symlink(l.Source.Absolute, l.Target.Absolute); err != nil {
-			if targetBackup != nil {
-				//os.NewFile() TODO: restore
-			}
-			fmt.Printf("\t->\terror: %v\n", err)
-			continue
-		}
-		fmt.Println("\t->\tcreated")
-	}
-	fmt.Println("Symlinks created!")
+	link()
 
 	//cmd := exec.Command("sh","-c",  "ls -la ~")
 	//var stdout, stderr bytes.Buffer
@@ -137,40 +87,69 @@ func up() {
 
 	// commands
 
-	fmt.Printf("Executing commands (%d):\n", len(dc.Commands))
+	//fmt.Printf("Executing commands (%d):\n", len(dc.Commands))
+	//
+	//if err := os.Chdir(path.Dir(dc.Source)); err != nil {
+	//	fmt.Printf("An error occured while changing work directory: %s\n", err)
+	//	os.Exit(1)
+	//}
+	//nw := int(math.Log10(float64(len(dc.Commands))))
+	//for i, c := range dc.Commands {
+	//	fmt.Printf("%[1]*[2]d/%[1]*[3]d: %[4]s\n", nw, i+1, len(dc.Commands), *c)
+	//
+	//	cmd := exec.Command("sh", "-c", string(*c))
+	//	cmdReader, err := cmd.StdoutPipe()
+	//	if err != nil {
+	//		_, _ = fmt.Fprintf(os.Stderr, "An error occured while acquiring pipe: %s\n", err)
+	//		continue
+	//	}
+	//
+	//	scanner := bufio.NewScanner(cmdReader)
+	//	go func() {
+	//		for scanner.Scan() {
+	//			fmt.Println(scanner.Text())
+	//		}
+	//	}()
+	//
+	//	err = cmd.Start()
+	//	if err != nil {
+	//		_, _ = fmt.Fprintf(os.Stderr, "An error occurred while starting command execution: %s\n", err)
+	//		continue
+	//	}
+	//
+	//	err = cmd.Wait()
+	//	if err != nil {
+	//		_, _ = fmt.Fprintf(os.Stderr, "An error occurred while waitng: %s\n", err)
+	//		continue
+	//	}
+	//}
+}
 
-	if err := os.Chdir(path.Dir(dc.Source)); err != nil {
-		fmt.Printf("An error occured while changing work directory: %s\n", err)
-		os.Exit(1)
+func link() {
+	ll := dc.Links
+	if hostName != "" {
+		h, exists := dc.Hosts[hostName]
+		if !exists {
+			fmt.Printf("There is no host '%s' in %s\n", hostName, cfgFile)
+			return
+		}
+		ll = append(ll, h.Links...)
 	}
-	nw := int(math.Log10(float64(len(dc.Commands))))
-	for i, c := range dc.Commands {
-		fmt.Printf("%[1]*[2]d/%[1]*[3]d: %[4]s\n", nw, i+1, len(dc.Commands), c)
-
-		cmd := exec.Command("sh", "-c", c)
-		cmdReader, err := cmd.StdoutPipe()
+	fmt.Printf("Creating symlinks (%d):\n", len(ll))
+	for _, l := range ll {
+		fmt.Printf("%s <- %s: ", l.Target.Original, l.Source.Original)
+		st, err := l.Link()
 		if err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "An error occured while acquiring pipe: %s\n", err)
+			fmt.Println(err)
 			continue
 		}
-
-		scanner := bufio.NewScanner(cmdReader)
-		go func() {
-			for scanner.Scan() {
-				fmt.Println(scanner.Text())
-			}
-		}()
-
-		err = cmd.Start()
-		if err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "An error occurred while starting command execution: %s\n", err)
-			continue
-		}
-
-		err = cmd.Wait()
-		if err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "An error occurred while waitng: %s\n", err)
-			continue
+		switch st {
+		case config.Omitted:
+			fmt.Println("omitted (already exists)")
+		case config.Created:
+			fmt.Println("created")
+		case config.Replaced:
+			fmt.Println("replaced")
 		}
 	}
 }

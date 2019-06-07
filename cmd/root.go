@@ -12,7 +12,7 @@ import (
 
 var (
 	cfgFile   string
-	dc        config.DotfilesConfig
+	dc        config.Config
 	errLogger  = log.New(os.Stderr, "", 0)
 )
 

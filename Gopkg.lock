@@ -2,14 +2,6 @@
 
 
 [[projects]]
-  digest = "1:e626376fab8608a972d47e91b3c1bbbddaecaf1d42b82be6dcc52d10a7557893"
-  name = "github.com/VividCortex/ewma"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "b24eb346a94c3ba12c1da1e564dbac1b498a77ce"
-  version = "v1.1.1"
-
-[[projects]]
   digest = "1:abeb38ade3f32a92943e5be54f55ed6d6e3b6602761d74b4aab4c9dd45c18abd"
   name = "github.com/fsnotify/fsnotify"
   packages = ["."]
@@ -51,14 +43,6 @@
   pruneopts = "UT"
   revision = "de8848e004dd33dc07a2947b3d76f618a7fc7ef1"
   version = "v1.8.1"
-
-[[projects]]
-  digest = "1:9b90c7639a41697f3d4ad12d7d67dfacc9a7a4a6e0bbfae4fc72d0da57c28871"
-  name = "github.com/mattn/go-isatty"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "1311e847b0cb909da63b5fecfb5370aa66236465"
-  version = "v0.0.8"
 
 [[projects]]
   digest = "1:5d231480e1c64a726869bc4142d270184c419749d34f167646baa21008eb0a79"
@@ -136,34 +120,10 @@
   version = "v1.4.0"
 
 [[projects]]
-  digest = "1:b98980042819240ff47f380378e881dfc04cdf36c373c12dce3397fdfb71d5cb"
-  name = "github.com/vbauerster/mpb"
-  packages = [
-    ".",
-    "cwriter",
-    "decor",
-    "internal",
-  ]
-  pruneopts = "UT"
-  revision = "b1fa246876b8398a7e3aad2000ef5c0b1a0b58fe"
-  version = "v3.4.0"
-
-[[projects]]
   branch = "master"
-  digest = "1:bbe51412d9915d64ffaa96b51d409e070665efc5194fcf145c4a27d4133107a4"
-  name = "golang.org/x/crypto"
-  packages = ["ssh/terminal"]
-  pruneopts = "UT"
-  revision = "20be4c3c3ed52bfccdb2d59a412ee1a936d175a7"
-
-[[projects]]
-  branch = "master"
-  digest = "1:e456eadc3fc18795bdaf836c3a8f25d678cfdd52a5164cf1d3a64ffe23b8df1a"
+  digest = "1:8f5108406bc43c7669b0d67d282e40d05c9f268615fcaf8c1f0f76965aa3f09f"
   name = "golang.org/x/sys"
-  packages = [
-    "unix",
-    "windows",
-  ]
+  packages = ["unix"]
   pruneopts = "UT"
   revision = "4c4f7f33c9ed00de01c4c741d2177abfcfe19307"
 
@@ -190,6 +150,14 @@
   revision = "51d6538a90f86fe93ac480b35f37b2be17fef232"
   version = "v2.2.2"
 
+[[projects]]
+  branch = "v3"
+  digest = "1:e11e6a71536a7120d56ea0c0cbfb4cf2b24b328f3982e8d03ce6939f7fe8b14c"
+  name = "gopkg.in/yaml.v3"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "55513cacd4ae8b250e3a9084ab9d8c407b1ed618"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
@@ -197,8 +165,7 @@
     "github.com/mitchellh/go-homedir",
     "github.com/spf13/cobra",
     "github.com/spf13/viper",
-    "github.com/vbauerster/mpb",
-    "gopkg.in/yaml.v2",
+    "gopkg.in/yaml.v3",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
