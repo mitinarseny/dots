@@ -1,6 +1,6 @@
 <p align="center">
     <a href="https://github.com/mitinarseny/dots">
-        <img src="https://rzhao.io/img/dotfiles/dotfiles.png" alt="dots logo" />
+        <img src="https://imgs1.fontbrain.com/custom_imgs/27/bb/46a471e7a86a82d3d5397365dabd/td-720-60-b0f0441c91eba1a21c9840680e4f83ee@2x.png" alt="dots logo" />
     </a>
 </p>
 
