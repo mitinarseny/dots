@@ -1,5 +1,3 @@
-variables: []
-
 links:
   ~/.zshrc:
     path: .zshrc
@@ -26,8 +24,6 @@ commands:
 
 hosts:
   macos:
-    variables: []
-
     links:
       ~/Library/Application Support/Sublime Text 3/Packages/User/Package Control.sublime-settings:
         path: subl/Package Control.sublime-settings
@@ -35,9 +31,6 @@ hosts:
       ~/Library/Application Support/Sublime Text 3/Packages/User/Preferences.sublime-settings:
         path: subl/Preferences.sublime-settings
         force: true
-
-    commands:
-      - echo 1
 
     defaults:
       apps:
@@ -57,4 +50,3 @@ hosts:
           LoadPrefsFromCustomFolder:
             type: bool
             value: true
-      globals:
