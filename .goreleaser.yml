@@ -30,7 +30,7 @@ brew:
   name: dots
   github:
     owner: mitinarseny
-    name: homebrew-taps
+    name: homebrew-tap
   commit_author:
     name: Arseny Mitin
     email: mitinarseny@gmail.com
