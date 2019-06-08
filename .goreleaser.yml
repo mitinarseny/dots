@@ -26,3 +26,14 @@ changelog:
     exclude:
     - '^docs:'
     - '^test:'
+brew:
+  name: dots
+  github:
+    owner: mitinarseny
+    name: homebrew-taps
+  commit_author:
+    name: Arseny Mitin
+    email: mitinarseny@gmail.com
+  folder: Formula
+  homepage: "https://github.com/mitinarseny/dots"
+  description: "Delivery tool for your dotfiles"
