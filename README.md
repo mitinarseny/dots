@@ -86,7 +86,7 @@ defaults:
   globals:
     key: value
 ```
-
+An example config is available [here](example..config.yaml).
 
 
 
