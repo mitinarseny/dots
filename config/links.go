@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"github.com/mitchellh/go-homedir"
 	"gopkg.in/yaml.v3"
 	"os"
 	"path/filepath"
@@ -100,7 +99,7 @@ func (l *Link) Link() (status int, err error) {
 	return Created, nil
 }
 func (l *Link) Revise(configDir string) error {
-	t, err := homedir.Expand(l.Target.Original)
+	t, err := expandTilde(l.Target.Original)
 	if err != nil {
 		return err
 	}
@@ -124,4 +123,15 @@ func (l *Link) Revise(configDir string) error {
 	}()
 
 	return nil
+}
+
+func expandTilde(path string) (string, error) {
+	if len(path) == 0 || path[0] != '~' {
+		return path, nil
+	}
+	hd, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(hd, path[1:]), nil
 }

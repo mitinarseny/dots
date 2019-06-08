@@ -1,24 +1,33 @@
 package config
 
 import (
-	"io"
+	"gopkg.in/yaml.v3"
 	"os/exec"
 )
 
-type Commands []*Command
+type Commands []Command
 
-type Command string
+type Command struct {
+	String string
+	*exec.Cmd
+}
 
-func (c *Command) Run(stdin io.Reader, stdout io.Writer, stderr io.Writer) error {
-	cmd := exec.Command("sh", "-c", string(*c))
+func (c *Command) WithString(s string) *Command {
+	c.String = s
+	c.Cmd = exec.Command("sh", "-c", c.String)
+	return c
+}
 
-	cmd.Stdin = stdin
-	cmd.Stdout = stdout
-	cmd.Stderr = stderr
+type yamlCommand string
 
-	if err := cmd.Run(); err != nil {
+func (c *Command) UnmarshalYAML(value *yaml.Node) error {
+	var aux yamlCommand
+
+	if err := value.Decode(&aux); err != nil {
 		return err
 	}
+
+	c.WithString(string(aux))
 
 	return nil
 }
