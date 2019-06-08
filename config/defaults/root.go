@@ -1,7 +1,7 @@
 package defaults
 
 type Defaults struct {
-	Apps Domains
+	Apps    Domains
 	Domains Domains
-	Globals Domains
+	Globals Domain
 }

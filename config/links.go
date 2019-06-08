@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"github.com/mitchellh/go-homedir"
 	"gopkg.in/yaml.v3"
 	"os"
@@ -25,7 +26,7 @@ func (l *Links) UnmarshalYAML(value *yaml.Node) error {
 	for target, link := range aux {
 		ll := *link
 		ll.Target = &FilePath{
-			Original:target,
+			Original: target,
 		}
 		*l = append(*l, &ll)
 	}
@@ -38,19 +39,27 @@ type Link struct {
 	Force  bool
 }
 
-type yamlLink struct {
-	Path *FilePath
-	Force  bool
+type yamlLinkInline *FilePath
+
+type yamlLinkExtended struct {
+	Path  *FilePath
+	Force bool
 }
 
 func (l *Link) UnmarshalYAML(value *yaml.Node) error {
-	var aux yamlLink
-	if err := value.Decode(&aux); err != nil {
-		return err
+	var auxInline yamlLinkInline
+	if err := value.Decode(&auxInline); err == nil {
+		l.Source = auxInline
+		l.Force = false
+		return nil
 	}
-	l.Source = aux.Path
-	l.Force = aux.Force
-	return nil
+	var aux yamlLinkExtended
+	if err := value.Decode(&aux); err == nil {
+		l.Source = aux.Path
+		l.Force = aux.Force
+		return nil
+	}
+	return fmt.Errorf("link should be <string>, or { path: <string>, force: <bool> }")
 }
 
 type FilePath struct {

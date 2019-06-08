@@ -5,7 +5,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type Variables map[string]Variable
+type Variables []*Variable
 
 type Variable struct {
 	Value   *string

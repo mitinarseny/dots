@@ -1,37 +1,29 @@
-// Copyright © 2019 NAME HERE <EMAIL ADDRESS>
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package cmd
 
 import (
 	"fmt"
 	"github.com/mitinarseny/dots/config"
+	"github.com/mitinarseny/dots/config/defaults"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
+	"math"
+	"os"
+	"path"
 	"path/filepath"
 )
 
 var (
-	hostName string
+	hostName *string
 )
 
 // upCmd represents the up command
 var upCmd = &cobra.Command{
 	Use:   "up",
 	Short: "Install dotfiles",
+	Args:  cobra.ExactArgs(1),
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		hostName = &args[0]
 		data, err := ioutil.ReadFile(cfgFile)
 		if err != nil {
 			errLogger.Fatalf("An error occurred while openning file '%v': %v", cfgFile, err)
@@ -39,18 +31,18 @@ var upCmd = &cobra.Command{
 		if err := yaml.Unmarshal(data, &dc); err != nil {
 			errLogger.Fatalf("An error occurred while parsing '%v': %v", cfgFile, err)
 		}
-		if err := dc.Revise(filepath.Dir(cfgFile)); err != nil {
+		if err := dc.Revise(filepath.Dir(cfgFile), hostName); err != nil {
 			errLogger.Fatalln("An error occurred while revising ", err)
 		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		up()
+		up(hostName)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(upCmd)
-	upCmd.Flags().StringVarP(&hostName, "host_name", "H", "", "Host to use")
+	//upCmd.Flags().StringVar(hostName, "host_name", "", "Host to use")
 
 	// Here you will define your flags and configuration settings.
 
@@ -71,73 +63,102 @@ func left(s string, w int) string {
 	return fmt.Sprintf("%[1]*s", -w, s)
 }
 
-func up() {
-	link()
-	// commands
+func up(host *string) {
+	if err := os.Chdir(path.Dir(cfgFile)); err != nil {
+		fmt.Printf("An error occured while changing work directory: %s\n", err)
+		os.Exit(1)
+	}
 
-	//fmt.Printf("Executing commands (%d):\n", len(dc.Commands))
-	//
-	//if err := os.Chdir(path.Dir(dc.Source)); err != nil {
-	//	fmt.Printf("An error occured while changing work directory: %s\n", err)
-	//	os.Exit(1)
-	//}
-	//nw := int(math.Log10(float64(len(dc.Commands))))
-	//for i, c := range dc.Commands {
-	//	fmt.Printf("%[1]*[2]d/%[1]*[3]d: %[4]s\n", nw, i+1, len(dc.Commands), *c)
-	//
-	//	cmd := exec.Command("sh", "-c", string(*c))
-	//	cmdReader, err := cmd.StdoutPipe()
-	//	if err != nil {
-	//		_, _ = fmt.Fprintf(os.Stderr, "An error occured while acquiring pipe: %s\n", err)
-	//		continue
-	//	}
-	//
-	//	scanner := bufio.NewScanner(cmdReader)
-	//	go func() {
-	//		for scanner.Scan() {
-	//			fmt.Println(scanner.Text())
-	//		}
-	//	}()
-	//
-	//	err = cmd.Start()
-	//	if err != nil {
-	//		_, _ = fmt.Fprintf(os.Stderr, "An error occurred while starting command execution: %s\n", err)
-	//		continue
-	//	}
-	//
-	//	err = cmd.Wait()
-	//	if err != nil {
-	//		_, _ = fmt.Fprintf(os.Stderr, "An error occurred while waitng: %s\n", err)
-	//		continue
-	//	}
-	//}
+	links := []*config.Links{&dc.Links}
+	commands := []*config.Commands{&dc.Commands}
+
+	dflts := []*defaults.Defaults{&dc.Defaults}
+	if host != nil {
+		links = append(links, &dc.Hosts[*host].Links)
+
+		commands = append(commands, &dc.Hosts[*host].Commands)
+
+		dflts = append(dflts, &dc.Hosts[*host].Defaults)
+	}
+
+	createLinks(links...)
+	runCommands(commands...)
+	setDefaults(dflts...)
 }
 
-func link() {
-	ll := dc.Links
-	if hostName != "" {
-		h, exists := dc.Hosts[hostName]
-		if !exists {
-			fmt.Printf("There is no host '%s' in %s\n", hostName, cfgFile)
-			return
+func createLinks(links ...*config.Links) {
+	fmt.Printf("Creating symlinks (%d):\n", len(links))
+	for _, ll := range links {
+		for _, l := range *ll {
+			fmt.Printf("%s <- %s: ", l.Target.Original, l.Source.Original)
+			st, err := l.Link()
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
+			switch st {
+			case config.Created:
+				fmt.Println("created")
+			case config.Omitted:
+				fmt.Printf("omitted (already exists, force: %t)\n", l.Force)
+			case config.Replaced:
+				fmt.Printf("replaced (already exists, force: %t)\n", l.Force)
+			}
 		}
-		ll = append(ll, h.Links...)
 	}
-	fmt.Printf("Creating symlinks (%d):\n", len(ll))
-	for _, l := range ll {
-		fmt.Printf("%s <- %s: ", l.Target.Original, l.Source.Original)
-		st, err := l.Link()
-		if err != nil {
-			fmt.Println(err)
-			continue
+}
+
+func runCommands(cmds ...*config.Commands) {
+	fmt.Printf("Executing cmds (%d):\n", len(cmds))
+	nw := int(math.Log10(float64(len(dc.Commands))))
+	for _, cc := range cmds {
+		for i, c := range *cc {
+			fmt.Printf("[%[1]*[2]d/%[1]*[3]d]: %[4]s\n", nw, i+1, len(dc.Commands), *c)
+			if err := c.Run(os.Stdin, os.Stdout, os.Stderr); err != nil {
+				fmt.Printf("An error occured while running: %s\n", err)
+			}
 		}
-		switch st {
-		case config.Omitted:
-			fmt.Println("omitted (already exists)")
-		case config.Created:
-			fmt.Println("created")
-		case config.Replaced:
-			fmt.Println("replaced")
+	}
+}
+
+func setDefaults(dflts ...*defaults.Defaults) {
+	fmt.Println("Setting defaults:")
+	for _, d := range dflts {
+		if len(d.Globals) != 0 {
+			fmt.Printf("GLOBAL (%d):\n", len(d.Globals))
+		}
+		for keyName, key := range d.Globals {
+			cmdStr := fmt.Sprintf(
+				"defaults write -globalDomain %s %s",
+				keyName,
+				key.Value.String())
+			fmt.Printf("[[%s]]: %s\n", keyName, cmdStr)
+			cmd := config.Command(cmdStr)
+			if err := cmd.Run(nil, ioutil.Discard, ioutil.Discard); err != nil {
+				fmt.Println(err)
+			}
+		}
+
+		for typ, domains := range map[string]defaults.Domains{
+			" -app": d.Apps,
+			"":      d.Domains,
+		} {
+			for domainName, domain := range domains {
+				fmt.Printf("%s (%d):\n", domainName, len(domain))
+				for keyName, key := range domain {
+					cmdStr := fmt.Sprintf(
+						"defaults write%s %s %s %s",
+						typ,
+						domainName,
+						keyName,
+						key.Value.String())
+					fmt.Printf("[[%s]]: %s\n", keyName, cmdStr)
+					cmd := config.Command(cmdStr)
+					if err := cmd.Run(nil, ioutil.Discard, ioutil.Discard); err != nil {
+						fmt.Println(err)
+					}
+				}
+			}
 		}
 	}
 }

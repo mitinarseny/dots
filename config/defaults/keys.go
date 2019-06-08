@@ -88,6 +88,7 @@ func (k *Key) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&auxExtendedType); err != nil {
 		return err
 	}
+	k.Type = auxExtendedType.Type
 	switch auxExtendedType.Type {
 	case StringType:
 		var auxExtended yamlKeyString
