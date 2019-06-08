@@ -13,18 +13,15 @@ Delivery tool for your `.dotfiles`.
 
 ## Install
 
+### macOS
+
 ```bash
-go install github.com/mitinarseny/dots
+brew install mitinarseny/tap/dots
 ```
- 
-### Dependencies
-
-* [Go](https://golang.org)
-
 
 ## Usage
 ```bash
-$GOPATH/bin/dots up [hostName] [-c path/to/config.yaml]
+dots up [hostName] [-c path/to/config.yaml]
 ```
 
 
