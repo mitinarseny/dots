@@ -19,7 +19,6 @@ var upCmd = &cobra.Command{
 	Short: "Install dotfiles",
 	Args:  cobra.RangeArgs(0, 1),
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-
 		data, err := ioutil.ReadFile(cfgFile)
 		if err != nil {
 			errLogger.Fatalf("An error occurred while openning file '%v': %v", cfgFile, err)
@@ -31,7 +30,6 @@ var upCmd = &cobra.Command{
 		if err := dc.Host.Revise(filepath.Dir(cfgFile)); err != nil {
 			errLogger.Fatalln("An error occurred while revising ", err)
 		}
-
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := os.Chdir(path.Dir(cfgFile)); err != nil {
@@ -108,9 +106,10 @@ func createLinks(links ...*config.Links) {
 }
 
 func execCommands(cmds *config.Commands) {
-
 	nw := int(math.Log10(float64(len(dc.Commands))))
-	fmt.Printf("Executing cmds (%d):\n", len(*cmds))
+	if len(*cmds) > 0 {
+		fmt.Printf("Executing cmds (%d):\n", len(*cmds))
+	}
 	for i, c := range *cmds {
 		fmt.Printf("[%[1]*[2]d/%[1]*[3]d]: %[4]s\n", nw, i+1, len(dc.Commands), *c)
 		if err := c.Run(os.Stdin, os.Stdout, os.Stderr); err != nil {
@@ -123,7 +122,7 @@ func execCommands(cmds *config.Commands) {
 func setDefaults(d *defaults.Defaults) {
 	fmt.Println("Setting defaults:")
 
-	if len(d.Globals) != 0 {
+	if len(d.Globals) > 0 {
 		fmt.Printf("GLOBAL (%d):\n", len(d.Globals))
 	}
 	for keyName, key := range d.Globals {
@@ -143,8 +142,8 @@ func setDefaults(d *defaults.Defaults) {
 		"":      d.Domains,
 	} {
 		for domainName, domain := range domains {
-			fmt.Printf("%s (%d):\n", domainName, len(domain))
-			for keyName, key := range domain {
+			fmt.Printf("%s (%d):\n", domainName, len(*domain))
+			for keyName, key := range *domain {
 				cmdStr := fmt.Sprintf(
 					"defaults write%s %s %s %s",
 					typ,
@@ -153,7 +152,7 @@ func setDefaults(d *defaults.Defaults) {
 					key.Value.String())
 				fmt.Printf("[[%s]]: %s\n", keyName, cmdStr)
 				cmd := config.Command(cmdStr)
-				if err := cmd.Run(nil, ioutil.Discard, ioutil.Discard); err != nil {
+				if err := cmd.Run(nil, os.Stdout, os.Stderr); err != nil {
 					fmt.Println(err)
 				}
 			}

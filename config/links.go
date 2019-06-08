@@ -25,31 +25,29 @@ func (l *Links) UnmarshalYAML(value *yaml.Node) error {
 	}
 	for target, link := range aux {
 		ll := *link
-		ll.Target = &FilePath{
-			Original: target,
-		}
+		ll.Target.Original = target
 		*l = append(*l, &ll)
 	}
 	return nil
 }
 
 type Link struct {
-	Source *FilePath
-	Target *FilePath
+	Source FilePath
+	Target FilePath
 	Force  bool
 }
 
 type yamlLinkInline *FilePath
 
 type yamlLinkExtended struct {
-	Path  *FilePath
+	Path  FilePath
 	Force bool
 }
 
 func (l *Link) UnmarshalYAML(value *yaml.Node) error {
 	var auxInline yamlLinkInline
 	if err := value.Decode(&auxInline); err == nil {
-		l.Source = auxInline
+		l.Source = *auxInline
 		l.Force = false
 		return nil
 	}

@@ -26,13 +26,15 @@ $GOPATH/bin/dots up [hostName] [-c path/to/config.yaml]
 
 ## Config
 Config file is a `.yaml` file with the following structure:
+
 ```yaml
 <HOST>
 hosts:
   hostName: <HOST>
 ```
 ### Hosts
-Each `<HOST>` has following structure:
+Each `<HOST>` has the following structure:
+
 ```yaml
 variables:
   - name1: value1
