@@ -15,7 +15,7 @@ import (
 
 // upCmd represents the upHost command
 var upCmd = &cobra.Command{
-	Use:   "up",
+	Use:   "up [host]",
 	Short: "Install dotfiles",
 	Args:  cobra.RangeArgs(0, 1),
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
@@ -74,14 +74,6 @@ func init() {
 	// upCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func center(s string, w int) string {
-	return fmt.Sprintf("%[1]*s", -w, fmt.Sprintf("%[1]*s", (w+len(s))/2, s))
-}
-
-func left(s string, w int) string {
-	return fmt.Sprintf("%[1]*s", -w, s)
-}
-
 func upHost(host *config.Host) {
 	setVariables(host.Variables)
 	createLinks(host.Links)
@@ -90,9 +82,10 @@ func upHost(host *config.Host) {
 }
 
 func setVariables(vars config.Variables) {
-	if len(vars) > 0 {
-		fmt.Printf("Setting variables (%d stages):\n", len(vars))
+	if len(vars) == 0 {
+		return
 	}
+	fmt.Printf("Setting variables (%d stages):\n", len(vars))
 	sw := int(math.Log10(float64(len(vars))))
 	for i, stage := range vars {
 		if len(stage) > 0 {
@@ -121,6 +114,9 @@ func setVariables(vars config.Variables) {
 }
 
 func createLinks(links config.Links) {
+	if len(links) == 0 {
+		return
+	}
 	fmt.Printf("Creating symlinks (%d):\n", len(links))
 	lw := int(math.Log10(float64(len(links))))
 	for i, l := range links {
@@ -142,10 +138,11 @@ func createLinks(links config.Links) {
 }
 
 func execCommands(cmds config.Commands) {
-	nw := int(math.Log10(float64(len(cmds))))
-	if len(cmds) > 0 {
-		fmt.Printf("Executing commands (%d):\n", len(cmds))
+	if len(cmds) == 0 {
+		return
 	}
+	nw := int(math.Log10(float64(len(cmds))))
+	fmt.Printf("Executing commands (%d):\n", len(cmds))
 	for i, c := range cmds {
 		fmt.Printf("[%[1]*[2]d/%[1]*[3]d]: %[4]s\n", nw, i+1, len(cmds), c.String)
 		c.Stdin = nil
@@ -160,8 +157,10 @@ func execCommands(cmds config.Commands) {
 }
 
 func setDefaults(d defaults.Defaults) {
+	if len(d.Apps) == 0 && len(d.Domains) == 0 && len(d.Globals) == 0 {
+		return
+	}
 	fmt.Println("Setting defaults:")
-
 	if len(d.Globals) > 0 {
 		fmt.Printf("GLOBAL (%d):\n", len(d.Globals))
 	}
@@ -187,6 +186,17 @@ func setDefaults(d defaults.Defaults) {
 		" -app": d.Apps,
 		"":      d.Domains,
 	} {
+		if len(domains) == 0 {
+			continue
+		}
+		var typName string
+		switch typ {
+		case " -app":
+			typName = "APPS"
+		case "":
+			typName = "DOMAINS"
+		}
+		fmt.Printf("%s (%d):\n", typName, len(domains))
 		for domainName, domain := range domains {
 			fmt.Printf("%s (%d):\n", domainName, len(domain))
 			for keyName, key := range domain {

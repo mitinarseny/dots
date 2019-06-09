@@ -10,15 +10,18 @@ import (
 )
 
 var (
-	cfgFile   string
-	dc        config.Config
+	cfgFile string
+	dc      config.Config
 )
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "dots",
 	Short: "Delivery tool for dotfiles",
-	Run:   func(cmd *cobra.Command, args []string) {},
+	Run: func(cmd *cobra.Command, args []string) {
+		_ = cmd.Help()
+		os.Exit(1)
+	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -36,7 +39,7 @@ func init() {
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
-	rootCmd.PersistentFlags().StringVarP(&cfgFile,"config-file", "c", "", "config file (default is '~/.dotfiles/dots.yaml')")
+	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config-file", "c", ".dots.yaml", "config file")
 }
 
 // initConfig reads in config file and ENV variables if set.
