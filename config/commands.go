@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"gopkg.in/yaml.v3"
 	"os/exec"
 )
@@ -8,7 +9,8 @@ import (
 type Commands []Command
 
 type Command struct {
-	String string
+	String      string
+	Description *string
 	*exec.Cmd
 }
 
@@ -18,16 +20,25 @@ func (c *Command) WithString(s string) *Command {
 	return c
 }
 
-type yamlCommand string
+type yamlCommandInline string
+
+type yamlCommandExtended struct {
+	Command     yamlCommandInline
+	Description *string
+}
 
 func (c *Command) UnmarshalYAML(value *yaml.Node) error {
-	var aux yamlCommand
-
-	if err := value.Decode(&aux); err != nil {
-		return err
+	var auxInline yamlCommandInline
+	if err := value.Decode(&auxInline); err == nil {
+		c.WithString(string(auxInline))
+		return nil
 	}
 
-	c.WithString(string(aux))
+	var auxExtended yamlCommandExtended
+	if err := value.Decode(&auxExtended); err == nil {
+		c.WithString(string(auxExtended.Command)).Description = auxExtended.Description
+		return nil
+	}
 
-	return nil
+	return errors.New("unable to parse command")
 }

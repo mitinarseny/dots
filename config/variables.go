@@ -22,6 +22,7 @@ type yamlVariableExtended struct {
 }
 
 func (v *Variable) UnmarshalYAML(value *yaml.Node) error {
+	fmt.Println("command repr: ", value.Value)
 	var auxInline yamlVariableInline
 	if err := value.Decode(&auxInline); err == nil {
 		v.Value = auxInline

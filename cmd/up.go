@@ -40,7 +40,10 @@ var upCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		fmt.Println("Delivering common:")
-		upHost(&dc.Host)
+		if err := upHost(&dc.Host); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 
 		if len(args) > 0 {
 			hostName := args[0]
@@ -54,7 +57,10 @@ var upCmd = &cobra.Command{
 				os.Exit(1)
 			}
 			fmt.Printf("Delivering host '%s':\n", hostName)
-			upHost(dc.Hosts[hostName])
+			if err := upHost(dc.Hosts[hostName]); err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
 		}
 	},
 }
@@ -74,57 +80,59 @@ func init() {
 	// upCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func upHost(host *config.Host) {
-	setVariables(host.Variables)
-	createLinks(host.Links)
-	execCommands(host.Commands)
-	setDefaults(host.Defaults)
+func upHost(host *config.Host) error {
+	if err := setVariables(host.Variables); err != nil {
+		return err
+	}
+	if err := createLinks(host.Links); err != nil {
+		return err
+	}
+	if err := execCommands(host.Commands); err != nil {
+		return err
+	}
+	if err := setDefaults(host.Defaults); err != nil {
+		return err
+	}
+	return nil
 }
 
-func setVariables(vars config.Variables) {
+func setVariables(vars config.Variables) error {
 	if len(vars) == 0 {
-		return
+		return nil
 	}
-	fmt.Printf("Setting variables (%d stages):\n", len(vars))
-	sw := int(math.Log10(float64(len(vars))))
+	fmt.Printf("Variables (%d stages):\n", len(vars))
 	for i, stage := range vars {
-		if len(stage) > 0 {
-			fmt.Printf("[stage %[1]*[2]d/%[1]*[3]d]: %d variables\n", sw, i+1, len(vars), len(stage))
-		}
 		vw := int(math.Log10(float64(len(stage))))
 		for varName, variable := range stage {
-			fmt.Printf("[%[1]*[2]d/%[1]*[3]d]: %s=", vw, i+1, len(stage), varName)
+			fmt.Printf("[%[1]*[2]d/%[1]*[3]d] %s=", vw, i+1, len(stage), varName)
 			if variable.Command != nil {
 				fmt.Printf("$(%s) -> ", variable.Command.String)
 				if err := variable.FromCommand(); err != nil {
-					fmt.Println(err)
-					continue
+					return err
 				}
 			}
 			if variable.Value != nil {
 				fmt.Println(*variable.Value)
 				if err := os.Setenv(varName, *variable.Value); err != nil {
-					fmt.Println(err)
-					continue
+					return err
 				}
-				continue
 			}
 		}
 	}
+	return nil
 }
 
-func createLinks(links config.Links) {
+func createLinks(links config.Links) error {
 	if len(links) == 0 {
-		return
+		return nil
 	}
-	fmt.Printf("Creating symlinks (%d):\n", len(links))
+	fmt.Printf("Links (%d):\n", len(links))
 	lw := int(math.Log10(float64(len(links))))
 	for i, l := range links {
-		fmt.Printf("[%[1]*[2]d/%[1]*[3]d]: %s <- %s: ", lw, i+1, len(links), l.Target.Original, l.Source.Original)
+		fmt.Printf("[%[1]*[2]d/%[1]*[3]d] %s <- %s: ", lw, i+1, len(links), l.Target.Original, l.Source.Original)
 		st, err := l.Link()
 		if err != nil {
-			fmt.Println(err)
-			continue
+			return err
 		}
 		switch st {
 		case config.Created:
@@ -135,50 +143,54 @@ func createLinks(links config.Links) {
 			fmt.Printf("replaced (already exists, force: %t)\n", l.Force)
 		}
 	}
+	return nil
 }
 
-func execCommands(cmds config.Commands) {
+func execCommands(cmds config.Commands) error {
 	if len(cmds) == 0 {
-		return
+		return nil
 	}
 	nw := int(math.Log10(float64(len(cmds))))
-	fmt.Printf("Executing commands (%d):\n", len(cmds))
+	fmt.Printf("Commands (%d):\n", len(cmds))
 	for i, c := range cmds {
-		fmt.Printf("[%[1]*[2]d/%[1]*[3]d]: %[4]s\n", nw, i+1, len(cmds), c.String)
+		fmt.Printf("[%[1]*[2]d/%[1]*[3]d]", nw, i+1, len(cmds))
+		if c.Description != nil {
+			fmt.Print(" ", *c.Description)
+		}
+		fmt.Printf(":\n%s\n", c.String)
 		c.Stdin = nil
 		c.Stdout = os.Stdout
 		c.Stderr = os.Stderr
 
 		if err := c.Run(); err != nil {
-			fmt.Printf("An error occured while running: %s\n", err)
+			return err
 		}
 	}
-
+	return nil
 }
 
-func setDefaults(d defaults.Defaults) {
+func setDefaults(d defaults.Defaults) error {
 	if len(d.Apps) == 0 && len(d.Domains) == 0 && len(d.Globals) == 0 {
-		return
+		return nil
 	}
-	fmt.Println("Setting defaults:")
-	if len(d.Globals) > 0 {
-		fmt.Printf("GLOBAL (%d):\n", len(d.Globals))
-	}
+	fmt.Println("Defaults:")
 	for keyName, key := range d.Globals {
+		if key.Description != nil {
+			fmt.Printf("[%s] ", *key.Description)
+		}
 		cmdStr := fmt.Sprintf(
 			"defaults write -globalDomain %s %s",
 			keyName,
 			key.Value.String())
-		fmt.Printf("[[%s]]: %s\n", keyName, cmdStr)
-		cmd := new(config.Command)
-		cmd.String = cmdStr
+		fmt.Println(cmdStr)
+		cmd := new(config.Command).WithString(cmdStr)
 
 		cmd.Stdin = nil
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 
 		if err := cmd.Run(); err != nil {
-			fmt.Println(err)
+			return err
 		}
 	}
 
@@ -189,24 +201,18 @@ func setDefaults(d defaults.Defaults) {
 		if len(domains) == 0 {
 			continue
 		}
-		var typName string
-		switch typ {
-		case " -app":
-			typName = "APPS"
-		case "":
-			typName = "DOMAINS"
-		}
-		fmt.Printf("%s (%d):\n", typName, len(domains))
 		for domainName, domain := range domains {
-			fmt.Printf("%s (%d):\n", domainName, len(domain))
 			for keyName, key := range domain {
+				if key.Description != nil {
+					fmt.Printf("[%s] ", *key.Description)
+				}
 				cmdStr := fmt.Sprintf(
 					"defaults write%s %s %s %s",
 					typ,
 					domainName,
 					keyName,
 					key.Value.String())
-				fmt.Printf("[[%s]]: %s\n", keyName, cmdStr)
+				fmt.Println(cmdStr)
 				cmd := new(config.Command).WithString(cmdStr)
 
 				cmd.Stdin = nil
@@ -214,10 +220,10 @@ func setDefaults(d defaults.Defaults) {
 				cmd.Stderr = os.Stderr
 
 				if err := cmd.Run(); err != nil {
-					fmt.Println(err)
+					return err
 				}
 			}
 		}
 	}
-
+	return nil
 }

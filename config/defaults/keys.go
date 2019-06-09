@@ -2,6 +2,7 @@ package defaults
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 )
 
@@ -19,8 +20,9 @@ const (
 )
 
 type Key struct {
-	Type  string
-	Value interface {
+	Type        string
+	Description *string
+	Value       interface {
 		fmt.Stringer
 	}
 }
@@ -28,7 +30,8 @@ type Key struct {
 type yamlKeyInline string
 
 type yamlKeyExtendedCommon struct {
-	Type  string
+	Type        *string
+	Description *string
 }
 
 type yamlKeyString struct {
@@ -84,74 +87,80 @@ func (k *Key) UnmarshalYAML(value *yaml.Node) error {
 		k.Value = &nv
 		return nil
 	}
-	var auxExtendedType yamlKeyExtendedCommon
-	if err := value.Decode(&auxExtendedType); err != nil {
-		return err
+	var auxExtended yamlKeyExtendedCommon
+	if err := value.Decode(&auxExtended); err == nil {
+		k.Description = auxExtended.Description
+		if auxExtended.Type == nil {
+			k.Type = StringType
+		} else {
+			k.Type = *auxExtended.Type
+		}
+		switch k.Type {
+		case StringType:
+			var auxExtended yamlKeyString
+			if err := value.Decode(&auxExtended); err != nil {
+				return err
+			}
+			k.Value = &auxExtended.Value
+		case DataType:
+			var auxExtended yamlKeyData
+			if err := value.Decode(&auxExtended); err != nil {
+				return err
+			}
+			k.Value = &auxExtended.Value
+		case IntegerType:
+			var auxExtended yamlKeyInteger
+			if err := value.Decode(&auxExtended); err != nil {
+				return err
+			}
+			k.Value = &auxExtended.Value
+		case FloatType:
+			var auxExtended yamlKeyFloat
+			if err := value.Decode(&auxExtended); err != nil {
+				return err
+			}
+			k.Value = &auxExtended.Value
+		case BooleanType:
+			var auxExtended yamlKeyBoolean
+			if err := value.Decode(&auxExtended); err != nil {
+				return err
+			}
+			k.Value = &auxExtended.Value
+		case DateType:
+			var auxExtended yamlKeyDate
+			if err := value.Decode(&auxExtended); err != nil {
+				return err
+			}
+			k.Value = &auxExtended.Value
+		case ArrayType:
+			var auxExtended yamlKeyArray
+			if err := value.Decode(&auxExtended); err != nil {
+				return err
+			}
+			k.Value = &auxExtended.Value
+		case ArrayAddType:
+			var auxExtended yamlKeyArrayAdd
+			if err := value.Decode(&auxExtended); err != nil {
+				return err
+			}
+			k.Value = &auxExtended.Value
+		case DictType:
+			var auxExtended yamlKeyDict
+			if err := value.Decode(&auxExtended); err != nil {
+				return err
+			}
+			k.Value = &auxExtended.Value
+		case DictAddType:
+			var auxExtended yamlKeyDictAdd
+			if err := value.Decode(&auxExtended); err != nil {
+				return err
+			}
+			k.Value = &auxExtended.Value
+		default:
+			return fmt.Errorf("invalid type '%s'", k.Type)
+		}
+		return nil
 	}
-	k.Type = auxExtendedType.Type
-	switch auxExtendedType.Type {
-	case StringType:
-		var auxExtended yamlKeyString
-		if err := value.Decode(&auxExtended); err != nil {
-			return err
-		}
-		k.Value = &auxExtended.Value
-	case DataType:
-		var auxExtended yamlKeyData
-		if err := value.Decode(&auxExtended); err != nil {
-			return err
-		}
-		k.Value = &auxExtended.Value
-	case IntegerType:
-		var auxExtended yamlKeyInteger
-		if err := value.Decode(&auxExtended); err != nil {
-			return err
-		}
-		k.Value = &auxExtended.Value
-	case FloatType:
-		var auxExtended yamlKeyFloat
-		if err := value.Decode(&auxExtended); err != nil {
-			return err
-		}
-		k.Value = &auxExtended.Value
-	case BooleanType:
-		var auxExtended yamlKeyBoolean
-		if err := value.Decode(&auxExtended); err != nil {
-			return err
-		}
-		k.Value = &auxExtended.Value
-	case DateType:
-		var auxExtended yamlKeyDate
-		if err := value.Decode(&auxExtended); err != nil {
-			return err
-		}
-		k.Value = &auxExtended.Value
-	case ArrayType:
-		var auxExtended yamlKeyArray
-		if err := value.Decode(&auxExtended); err != nil {
-			return err
-		}
-		k.Value = &auxExtended.Value
-	case ArrayAddType:
-		var auxExtended yamlKeyArrayAdd
-		if err := value.Decode(&auxExtended); err != nil {
-			return err
-		}
-		k.Value = &auxExtended.Value
-	case DictType:
-		var auxExtended yamlKeyDict
-		if err := value.Decode(&auxExtended); err != nil {
-			return err
-		}
-		k.Value = &auxExtended.Value
-	case DictAddType:
-		var auxExtended yamlKeyDictAdd
-		if err := value.Decode(&auxExtended); err != nil {
-			return err
-		}
-		k.Value = &auxExtended.Value
-	default:
-		return fmt.Errorf("invalid type '%s'", k.Type)
-	}
-	return nil
+	return errors.New("unable to parse key")
+
 }
