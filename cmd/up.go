@@ -5,14 +5,12 @@ import (
 	"github.com/mitinarseny/dots/config"
 	"github.com/mitinarseny/dots/config/defaults"
 	"github.com/spf13/cobra"
-	"go.uber.org/zap/buffer"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"math"
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 )
 
 // upCmd represents the upHost command
@@ -23,14 +21,17 @@ var upCmd = &cobra.Command{
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		data, err := ioutil.ReadFile(cfgFile)
 		if err != nil {
-			errLogger.Fatalf("An error occurred while openning file '%v': %v", cfgFile, err)
+			fmt.Printf("An error occurred while openning file '%v': %v\n", cfgFile, err)
+			os.Exit(1)
 		}
 		if err := yaml.Unmarshal(data, &dc); err != nil {
-			errLogger.Fatalf("An error occurred while parsing '%v': %v", cfgFile, err)
+			fmt.Printf("An error occurred while parsing '%v': %v\n", cfgFile, err)
+			os.Exit(1)
 		}
 
 		if err := dc.Host.Revise(filepath.Dir(cfgFile)); err != nil {
-			errLogger.Fatalln("An error occurred while revising ", err)
+			fmt.Println("An error occurred while revising ", err)
+			os.Exit(1)
 		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
@@ -38,7 +39,7 @@ var upCmd = &cobra.Command{
 			fmt.Printf("An error occured while changing work directory: %s\n", err)
 			os.Exit(1)
 		}
-
+		fmt.Println("Delivering common:")
 		upHost(&dc.Host)
 
 		if len(args) > 0 {
@@ -49,8 +50,10 @@ var upCmd = &cobra.Command{
 				os.Exit(1)
 			}
 			if err := h.Revise(filepath.Dir(cfgFile)); err != nil {
-				errLogger.Fatalln("An error occurred while revising ", err)
+				fmt.Println("An error occurred while revising ", err)
+				os.Exit(1)
 			}
+			fmt.Printf("Delivering host '%s':\n", hostName)
 			upHost(dc.Hosts[hostName])
 		}
 	},
@@ -100,14 +103,10 @@ func setVariables(vars config.Variables) {
 			fmt.Printf("[%[1]*[2]d/%[1]*[3]d]: %s=", vw, i+1, len(stage), varName)
 			if variable.Command != nil {
 				fmt.Printf("$(%s) -> ", variable.Command.String)
-				var out buffer.Buffer
-				variable.Command.Stdout = &out
-				if err := variable.Command.Run(); err != nil {
+				if err := variable.FromCommand(); err != nil {
 					fmt.Println(err)
 					continue
 				}
-				varVal := strings.TrimSpace(out.String())
-				variable.Value = &varVal
 			}
 			if variable.Value != nil {
 				fmt.Println(*variable.Value)

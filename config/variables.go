@@ -2,7 +2,9 @@ package config
 
 import (
 	"fmt"
+	"go.uber.org/zap/buffer"
 	"gopkg.in/yaml.v3"
+	"strings"
 )
 
 type Variables []map[string]*Variable
@@ -36,4 +38,15 @@ func (v *Variable) UnmarshalYAML(value *yaml.Node) error {
 		return nil
 	}
 	return fmt.Errorf("variable should be <string>, or { value: <string> }, or { command: <command> }")
+}
+
+func (v *Variable) FromCommand() error {
+	var out buffer.Buffer
+	v.Command.Stdout = &out
+	if err := v.Command.Run(); err != nil {
+		return err
+	}
+	varVal := strings.TrimSpace(out.String())
+	v.Value = &varVal
+	return nil
 }

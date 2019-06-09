@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"github.com/mitinarseny/dots/config"
-	"log"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -13,7 +12,6 @@ import (
 var (
 	cfgFile   string
 	dc        config.Config
-	errLogger  = log.New(os.Stderr, "", 0)
 )
 
 // rootCmd represents the base command when called without any subcommands
