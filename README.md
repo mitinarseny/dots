@@ -89,7 +89,7 @@ defaults:
   globals:
     key: value
 ```
-An example config is available [here](example.config.yaml).
+An example config is available [here](https://github.com/mitinarseny/dotfiles/blob/master/.dots.yaml).
 
 
 
