@@ -1,4 +1,41 @@
+os: linux
+
 language: go
 
 go:
-  - master
+  - "1.12.x"
+
+addons:
+  apt:
+    update: true
+    packages:
+      - rpm
+      - snapd
+
+env:
+  - GO111MODULE=on PATH=/snap/bin:$PATH
+
+cache:
+  directories:
+    - $HOME/.cache/go-build
+    - $HOME/gopath/pkg/mod
+
+gobuild_args: -v
+
+deploy:
+  - provider: script
+    skip_cleanup: true
+    script: curl -sL https://git.io/goreleaser | bash
+    on:
+      tags: true
+
+notifications:
+  webhooks:
+    urls:
+      - https://fathomless-fjord-24024.herokuapp.com/notify
+    on_success: change
+    on_failure: always
+    on_start: never
+    on_cancel: always
+    on_error: always
+  email: false
