@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/mitinarseny/dots/config"
+	"github.com/mitinarseny/dots/core"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -11,7 +11,7 @@ import (
 
 var (
 	cfgFile string
-	dc      config.Config
+	dc      core.Config
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -39,13 +39,13 @@ func init() {
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
-	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config-file", "c", ".dots.yaml", "config file")
+	rootCmd.PersistentFlags().StringVarP(&cfgFile, "core-file", "c", ".dots.yaml", "core file")
 }
 
-// initConfig reads in config file and ENV variables if set.
+// initConfig reads in core file and ENV variables if set.
 func initConfig() {
 	//if cfgFile != "" {
-	//	// Use config file from the flag.
+	//	// Use core file from the flag.
 	//	viper.SetConfigFile(cfgFile)
 	//} else {
 	//	// Find home directory.
@@ -55,15 +55,15 @@ func initConfig() {
 	//		os.Exit(1)
 	//	}
 	//
-	//	// Search config in home directory with name ".dots" (without extension).
+	//	// Search core in home directory with name ".dots" (without extension).
 	//	viper.AddConfigPath(home)
 	//	viper.SetConfigName(".dots")
 	//}
 
 	viper.AutomaticEnv() // read in environment variables that match
 
-	// If a config file is found, read it in.
+	// If a core file is found, read it in.
 	//if err := viper.ReadInConfig(); err == nil {
-	//	fmt.Println("Using config file:", viper.ConfigFileUsed())
+	//	fmt.Println("Using core file:", viper.ConfigFileUsed())
 	//}
 }

@@ -1,4 +1,4 @@
-package config
+package core
 
 import (
 	"errors"
@@ -12,12 +12,6 @@ type Command struct {
 	String      string
 	Description *string
 	*exec.Cmd
-}
-
-func (c *Command) WithString(s string) *Command {
-	c.String = s
-	c.Cmd = exec.Command("sh", "-c", c.String)
-	return c
 }
 
 type yamlCommandInline string
@@ -41,4 +35,10 @@ func (c *Command) UnmarshalYAML(value *yaml.Node) error {
 	}
 
 	return errors.New("unable to parse command")
+}
+
+func (c *Command) WithString(s string) *Command {
+	c.String = s
+	c.Cmd = exec.Command("sh", "-c", c.String)
+	return c
 }
