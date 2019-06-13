@@ -1,12 +1,19 @@
 package core
 
 import (
+	"bytes"
 	"errors"
+	"fmt"
 	"gopkg.in/yaml.v3"
+	"os"
 	"os/exec"
 )
 
-type Commands []Command
+type Commands []*Command
+
+func (c *Commands) CollectCommands() ([]*Command, error) {
+	return *c, nil
+}
 
 type Command struct {
 	String      string
@@ -41,4 +48,20 @@ func (c *Command) WithString(s string) *Command {
 	c.String = s
 	c.Cmd = exec.Command("sh", "-c", c.String)
 	return c
+}
+
+func ExecuteCommands(cmds... *Command) error {
+	for _, c := range cmds {
+		var buff bytes.Buffer
+		if c.Description != nil {
+			buff.WriteString(fmt.Sprintf("%s: ", *c.Description))
+		}
+		buff.WriteString(c.String)
+		fmt.Println(buff.String())
+		c.Cmd.Stdout = os.Stdout
+		if err := c.Cmd.Run(); err != nil {
+			return err
+		}
+	}
+	return nil
 }

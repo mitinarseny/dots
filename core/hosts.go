@@ -53,8 +53,18 @@ func (h *Host) Inspect() error {
 }
 
 func (h *Host) Up() error {
+	fmt.Println("Variables:")
+	if err := h.SetVariables(); err != nil {
+		return err
+	}
+
 	fmt.Println("Links:")
-	if err := h.Link(); err != nil {
+	if err := h.CreateLinks(); err != nil {
+		return err
+	}
+
+	fmt.Println("Commands:")
+	if err := h.ExecuteCommands(); err != nil {
 		return err
 	}
 
@@ -63,7 +73,7 @@ func (h *Host) Up() error {
 	return nil
 }
 
-func (h *Host) Link() error {
+func (h *Host) CreateLinks() error {
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	defer cancelFunc()
 
@@ -77,20 +87,7 @@ func (h *Host) Link() error {
 		return err
 	}
 
-	return WaitForPipeline(ctx, errCh)
-}
-
-func WaitForPipeline(ctx context.Context, errChs ...<-chan error) error {
-	ctx, cancelFunc := context.WithCancel(ctx)
-	defer cancelFunc()
-
-	errc := mergeErrorChs(ctx, errChs...)
-	for err := range errc {
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	return waitForPipeline(ctx, errCh)
 }
 
 func (h *Host) GenLinks(ctx context.Context) (<-chan *ToLink, error) {
@@ -115,32 +112,72 @@ func (h *Host) GenLinks(ctx context.Context) (<-chan *ToLink, error) {
 	return mergeToLinkChs(ctx, toLinkChs...), nil
 }
 
-func mergeToLinkChs(ctx context.Context, cs ...<-chan *ToLink) <-chan *ToLink {
-	var wg sync.WaitGroup
-	out := make(chan *ToLink)
+func (h *Host) SetVariables() error {
+	vars, err := h.CollectVariables()
+	if err != nil {
+		return err
+	}
 
-	output := func(c <-chan *ToLink) {
-		defer wg.Done()
-		for n := range c {
-			select {
-			case out <- n:
-			case <-ctx.Done():
-				return
-			}
+	return SetVariables(vars...)
+}
+
+func (h *Host) CollectVariables() ([]*Variable, error) {
+	var vars []*Variable
+	if h.Extends != nil && h.Extends.Variables != nil {
+		hostVars, err := h.Extends.CollectVariables()
+		if err != nil {
+			return nil, err
+		}
+		vars = append(vars, hostVars...)
+	}
+	if h.Variables != nil {
+		hostVars, err := h.Variables.GenVariables()
+		if err != nil {
+			return nil, err
+		}
+		vars = append(vars, hostVars...)
+	}
+	return vars, nil
+}
+
+func (h *Host) ExecuteCommands() error {
+	cmds, err := h.CollectCommands()
+	if err != nil {
+		return err
+	}
+	return ExecuteCommands(cmds...)
+}
+
+func (h *Host) CollectCommands() ([]*Command, error) {
+	var cmds []*Command
+	if h.Extends != nil && h.Extends.Commands != nil {
+		hostCmds, err := h.Extends.CollectCommands()
+		if err != nil {
+			return nil, err
+		}
+		cmds = append(cmds, hostCmds...)
+	}
+	if h.Commands != nil {
+		hostCmds, err := h.Commands.CollectCommands()
+		if err != nil {
+			return nil, err
+		}
+		cmds = append(cmds, hostCmds...)
+	}
+	return cmds, nil
+}
+
+func waitForPipeline(ctx context.Context, errChs ...<-chan error) error {
+	ctx, cancelFunc := context.WithCancel(ctx)
+	defer cancelFunc()
+
+	errc := mergeErrorChs(ctx, errChs...)
+	for err := range errc {
+		if err != nil {
+			return err
 		}
 	}
-
-	wg.Add(len(cs))
-	for _, c := range cs {
-		go output(c)
-	}
-
-	go func() {
-		defer close(out)
-
-		wg.Wait()
-	}()
-	return out
+	return nil
 }
 
 func mergeErrorChs(ctx context.Context, cs ...<-chan error) <-chan error {
@@ -171,58 +208,30 @@ func mergeErrorChs(ctx context.Context, cs ...<-chan error) <-chan error {
 	return out
 }
 
-func mergeErrors(cs ...<-chan error) <-chan error {
+func mergeToLinkChs(ctx context.Context, cs ...<-chan *ToLink) <-chan *ToLink {
 	var wg sync.WaitGroup
-	// We must ensure that the output channel has the capacity to
-	// hold as many errors
-	// as there are error channels.
-	// This will ensure that it never blocks, even
-	// if WaitForPipeline returns early.
-	out := make(chan error, len(cs))
-	// Start an output goroutine for each input channel in cs.  output
-	// copies values from c to out until c is closed, then calls
-	// wg.Done.
-	output := func(c <-chan error) {
+	out := make(chan *ToLink)
+
+	output := func(c <-chan *ToLink) {
+		defer wg.Done()
 		for n := range c {
-			out <- n
+			select {
+			case out <- n:
+			case <-ctx.Done():
+				return
+			}
 		}
-		wg.Done()
 	}
+
 	wg.Add(len(cs))
 	for _, c := range cs {
 		go output(c)
 	}
-	// Start a goroutine to close out once all the output goroutines
-	// are done.  This must start after the wg.Add call.
+
 	go func() {
+		defer close(out)
+
 		wg.Wait()
-		close(out)
 	}()
 	return out
 }
-
-//func mergeToLinkChs(cs ...<-chan *ToLink) <-chan *ToLink {
-//	var wg sync.WaitGroup
-//	out := make(chan *ToLink)
-//
-//	// Start an output goroutine for each input channel in cs.  output
-//	// copies values from c to out until c is closed, then calls wg.Done.
-//	output := func(c <-chan *ToLink) {
-//		for n := range c {
-//			out <- n
-//		}
-//		wg.Done()
-//	}
-//	wg.Add(len(cs))
-//	for _, c := range cs {
-//		go output(c)
-//	}
-//
-//	// Start a goroutine to close out once all the output goroutines are
-//	// done.  This must start after the wg.Add call.
-//	go func() {
-//		wg.Wait()
-//		close(out)
-//	}()
-//	return out
-//}

@@ -126,7 +126,7 @@ func up(hostName string) {
 //	lw := int(math.Log10(float64(len(links))))
 //	for i, l := range links {
 //		fmt.Printf("[%[1]*[2]d/%[1]*[3]d] %s <- %s: ", lw, i+1, len(links), l.Target.Original, l.Source.Original)
-//		st, err := l.Link()
+//		st, err := l.CreateLinks()
 //		if err != nil {
 //			return err
 //		}

@@ -1,6 +1,7 @@
 package core
 
 import (
+	"bytes"
 	"fmt"
 	"go.uber.org/zap/buffer"
 	"gopkg.in/yaml.v3"
@@ -9,6 +10,18 @@ import (
 )
 
 type Variables []VariableStage
+
+func (v *Variables) GenVariables() ([]*Variable, error) {
+	var vars []*Variable
+	for _, vs := range *v {
+		vsVars, err := vs.GenVariables()
+		if err != nil {
+			return nil, err
+		}
+		vars = append(vars, vsVars...)
+	}
+	return vars, nil
+}
 
 func (v *Variables) Set() error {
 	for _, vs := range *v {
@@ -36,6 +49,14 @@ func (vs *VariableStage) UnmarshalYAML(value *yaml.Node) error {
 	}
 
 	return nil
+}
+
+func (vs *VariableStage) GenVariables() ([]*Variable, error) {
+	vars := make([]*Variable, 0, len(*vs))
+	for _, v := range *vs {
+		vars = append(vars, v)
+	}
+	return vars, nil
 }
 
 func (vs *VariableStage) Set() error {
@@ -78,8 +99,12 @@ func (v *Variable) UnmarshalYAML(value *yaml.Node) error {
 	}
 	return fmt.Errorf("variable should be <string>, or { value: <string> }, or { command: <command> }")
 }
+
 func (v *Variable) Set() error {
+	var buff bytes.Buffer
+	buff.WriteString(fmt.Sprintf("%s=", v.Name))
 	if v.Command != nil {
+		buff.WriteString(fmt.Sprintf("$(%s) -> ", v.Command.String))
 		var out buffer.Buffer
 		v.Command.Stdout = &out
 		if err := v.Command.Run(); err != nil {
@@ -88,8 +113,19 @@ func (v *Variable) Set() error {
 		varVal := strings.TrimSpace(out.String())
 		v.Value = &varVal
 	}
+	buff.WriteString(fmt.Sprintf("%q", *v.Value))
 	if err := os.Setenv(v.Name, *v.Value); err != nil {
 		return err
+	}
+	fmt.Println(buff.String())
+	return nil
+}
+
+func SetVariables(vars ...*Variable) error {
+	for _, v := range vars {
+		if err := v.Set(); err != nil {
+			return err
+		}
 	}
 	return nil
 }
