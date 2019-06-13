@@ -1,6 +1,7 @@
 package core
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -11,15 +12,7 @@ import (
 	"strings"
 )
 
-const (
-	Omitted  = LinkStatus(0)
-	Created  = LinkStatus(1)
-	Replaced = LinkStatus(2)
-)
-
-type LinkStatus int
-
-type Links []*Link
+type Links map[string]*Link
 
 type yamlLinks map[string]*Link
 
@@ -28,10 +21,26 @@ func (l *Links) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&aux); err != nil {
 		return err
 	}
-	//*l = make(Links, len(aux))
+	*l = make(Links, len(aux))
 	for target, link := range aux {
+		if link == nil {
+			(*l)[target] = &Link{
+				Target: target,
+				Force:  false,
+			}
+			continue
+		}
 		link.Target = target
-		*l = append(*l, link)
+		(*l)[target] = link
+	}
+	return nil
+}
+
+func (l *Links) Inspect() error {
+	for _, link := range *l {
+		if err := link.Inspect(); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -45,7 +54,7 @@ type Link struct {
 type yamlLinkInline string
 
 type yamlLinkExtended struct {
-	Path  string
+	Path  *string
 	Force bool
 }
 
@@ -58,7 +67,9 @@ func (l *Link) UnmarshalYAML(value *yaml.Node) error {
 	}
 	var aux yamlLinkExtended
 	if err := value.Decode(&aux); err == nil {
-		l.Path = aux.Path
+		if aux.Path != nil {
+			l.Path = *aux.Path
+		}
 		l.Force = aux.Force
 		return nil
 	}
@@ -66,11 +77,14 @@ func (l *Link) UnmarshalYAML(value *yaml.Node) error {
 }
 
 func (l *Link) Inspect() error {
-	if l.Path == "" {
-		return errors.New("path cannot be empty")
-	}
 	if isGlob(l.Path) && !strings.HasSuffix(l.Target, string(os.PathSeparator)) {
-		return errors.New("if path is a directory or glob, Target has to end with '/'")
+		return errors.New("if path is a directory or glob, Target must end with '/'")
+	}
+	if l.Path == "" || strings.HasSuffix(l.Path, string(os.PathSeparator)) {
+		if isGlob(l.Target) {
+			return fmt.Errorf("cannot deduce path from target %q", l.Target)
+		}
+		l.Path = filepath.Base(l.Target)
 	}
 	return nil
 }
@@ -130,7 +144,7 @@ func (l *Link) GenLinks(ctx context.Context) (<-chan *ToLink, error) {
 			select {
 			case out <- &ToLink{
 				Source: source,
-				Target: path.Join(l.Target, strings.TrimPrefix(source, basePath)),
+				Target: path.Join(absTargetExpanded, strings.TrimPrefix(source, basePath)),
 				Force:  l.Force,
 			}:
 			case <-ctx.Done():
@@ -141,39 +155,22 @@ func (l *Link) GenLinks(ctx context.Context) (<-chan *ToLink, error) {
 	return out, nil
 }
 
-//func Linker(ctx context.Context, in <-chan *ToLink) error {
-//	for {
-//		select {
-//		case l := <-in:
-//			if err := l.Link(); err != nil {
-//				return err
-//			}
-//			fmt.Println("")
-//		case <-ctx.Done():
-//			return nil
-//		}
-//	}
-//	out := make(chan LinkStatus)
-//	errCh := make(chan error, 1)
-//
-//	go func() {
-//		defer close(out)
-//		defer close(errCh)
-//		for toLink := range in {
-//			st, err := toLink.Link()
-//			if err != nil {
-//				errCh <- err
-//				return
-//			}
-//			select {
-//			case out <- st:
-//			case <-ctx.Done():
-//				return
-//			}
-//		}
-//	}()
-//	return out, errCh, nil
-//}
+func Linker(ctx context.Context, in <-chan *ToLink) (<-chan error, error) {
+	errCh := make(chan error)
+	go func() {
+		defer close(errCh)
+
+		for tl := range in {
+			err := tl.Link()
+			select {
+			case errCh <- err:
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+	return errCh, nil
+}
 
 type ToLink struct {
 	Source string
@@ -182,38 +179,51 @@ type ToLink struct {
 }
 
 func (t *ToLink) Link() error {
-	if err := os.MkdirAll(path.Dir(t.Target), 0755); err != nil {
+	pathDir := path.Dir(t.Target)
+	if err := os.MkdirAll(pathDir, 0755); err != nil {
+		fmt.Printf("failed to create path: %s", pathDir)
 		return err
 	}
+	var buff bytes.Buffer
+	defer func() {
+		fmt.Println(buff.String())
+	}()
 
+	buff.WriteString(fmt.Sprintf("%s <- %s: ", t.Target, t.Source))
 	var existed bool
 	switch _, err := os.Lstat(t.Target); {
 	case err == nil:
 		existed = true
 		if !t.Force {
+			buff.WriteString("omitted")
 			return nil
 		}
 		// TODO: backup
-		if err := os.Remove(t.Target); err != nil {
+		if err := os.RemoveAll(t.Target); err != nil {
+			buff.WriteString("failed to remove existing")
 			return err
 		}
 	case os.IsNotExist(err):
 	default:
+		buff.WriteString(err.Error())
 		return err
 	}
 
 	if err := os.Symlink(t.Source, t.Target); err != nil {
+		buff.WriteString(err.Error())
 		return err
 	}
 
 	if existed {
+		buff.WriteString("replaced")
 		return nil
 	}
+	buff.WriteString("created")
 	return nil
 }
 
 func expandTilde(path string) (string, error) {
-	if strings.HasPrefix(path, "~") {
+	if !strings.HasPrefix(path, "~") {
 		return path, nil
 	}
 	hd, err := os.UserHomeDir()

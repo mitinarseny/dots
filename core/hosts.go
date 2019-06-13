@@ -32,7 +32,6 @@ func (h *Host) UnmarshalYAML(value *yaml.Node) error {
 	if aux.Extends != nil {
 		h.Extends = &Host{Name: *aux.Extends}
 	}
-
 	h.Variables = aux.Variables
 	h.Links = aux.Links
 	h.Commands = aux.Commands
@@ -42,8 +41,8 @@ func (h *Host) UnmarshalYAML(value *yaml.Node) error {
 }
 
 func (h *Host) Inspect() error {
-	for _, l := range *h.Links {
-		if err := l.Inspect(); err != nil {
+	if h.Links != nil {
+		if err := h.Links.Inspect(); err != nil {
 			return err
 		}
 	}
@@ -54,6 +53,7 @@ func (h *Host) Inspect() error {
 }
 
 func (h *Host) Up() error {
+	fmt.Println("Links:")
 	if err := h.Link(); err != nil {
 		return err
 	}
@@ -71,8 +71,22 @@ func (h *Host) Link() error {
 	if err != nil {
 		return err
 	}
-	for toLink := range toLinkCh {
-		if err := toLink.Link(); err != nil {
+
+	errCh, err := Linker(ctx, toLinkCh)
+	if err != nil {
+		return err
+	}
+
+	return WaitForPipeline(ctx, errCh)
+}
+
+func WaitForPipeline(ctx context.Context, errChs ...<-chan error) error {
+	ctx, cancelFunc := context.WithCancel(ctx)
+	defer cancelFunc()
+
+	errc := mergeErrorChs(ctx, errChs...)
+	for err := range errc {
+		if err != nil {
 			return err
 		}
 	}
@@ -82,18 +96,26 @@ func (h *Host) Link() error {
 func (h *Host) GenLinks(ctx context.Context) (<-chan *ToLink, error) {
 	var toLinkChs []<-chan *ToLink
 
-	for _, l := range *h.Links {
-		toLinkCh, err := l.GenLinks(ctx)
+	if h.Extends != nil && h.Extends.Links != nil {
+		toLinkCh, err := h.Extends.GenLinks(ctx)
 		if err != nil {
 			return nil, err
 		}
 		toLinkChs = append(toLinkChs, toLinkCh)
 	}
+	if h.Links != nil {
+		for _, l := range *h.Links {
+			toLinkCh, err := l.GenLinks(ctx)
+			if err != nil {
+				return nil, err
+			}
+			toLinkChs = append(toLinkChs, toLinkCh)
+		}
+	}
 	return mergeToLinkChs(ctx, toLinkChs...), nil
 }
 
 func mergeToLinkChs(ctx context.Context, cs ...<-chan *ToLink) <-chan *ToLink {
-
 	var wg sync.WaitGroup
 	out := make(chan *ToLink)
 
@@ -131,7 +153,6 @@ func mergeErrorChs(ctx context.Context, cs ...<-chan error) <-chan error {
 			select {
 			case out <- n:
 			case <-ctx.Done():
-				fmt.Println("ctx done 2")
 				return
 			}
 		}
@@ -148,14 +169,6 @@ func mergeErrorChs(ctx context.Context, cs ...<-chan error) <-chan error {
 		wg.Wait()
 	}()
 	return out
-}
-
-func WaitForPipeline(errs ...<-chan error) error {
-	errCh := mergeErrors(errs...)
-	for err := range errCh {
-		return err
-	}
-	return nil
 }
 
 func mergeErrors(cs ...<-chan error) <-chan error {
