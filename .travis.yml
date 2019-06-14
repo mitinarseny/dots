@@ -20,7 +20,14 @@ cache:
     - $HOME/.cache/go-build
     - $HOME/gopath/pkg/mod
 
-gobuild_args: -v
+before_install:
+  - go get -t -v ./...
+
+script:
+  - go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
 
 deploy:
   - provider: script

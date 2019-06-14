@@ -2,13 +2,14 @@ package core
 
 import (
 	"bufio"
+	"github.com/mitinarseny/golog"
 	"io"
 	"log"
 	"os"
 )
 
 var (
-	logger = log.New(os.Stdout, "", 0)
+	logger = golog.New(log.New(os.Stdout, "", 0))
 )
 
 func loggerWriter() io.Writer {

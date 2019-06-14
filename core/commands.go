@@ -1,14 +1,11 @@
 package core
 
 import (
-	"bufio"
 	"bytes"
 	"errors"
 	"fmt"
 	"gopkg.in/yaml.v3"
-	"io"
 	"os/exec"
-	"strings"
 )
 
 const (
@@ -57,9 +54,7 @@ func (c *Command) WithString(s string) *Command {
 }
 
 func (c *Command) Execute() error {
-	defer logger.SetPrefix(logger.Prefix())
-
-	logger.SetPrefix(strings.Repeat(" ", len(logger.Prefix())) + commandOutputPrefix)
+	defer logger.SetPrefixf("   %s")()
 
 	c.Cmd.Stdout = loggerWriter()
 
@@ -81,20 +76,4 @@ func ExecuteCommands(cmds ...*Command) error {
 		}
 	}
 	return nil
-}
-
-func prefixedWriter(w io.Writer, prefix string) io.Writer {
-	pipeReader, pipeWriter := io.Pipe()
-
-	scanner := bufio.NewScanner(pipeReader)
-	scanner.Split(bufio.ScanLines)
-
-	go func() {
-		for scanner.Scan() {
-			_, _ = fmt.Fprint(w, prefix)
-			_, _ = w.Write(scanner.Bytes())
-			_, _ = fmt.Fprint(w, '\n')
-		}
-	}()
-	return pipeWriter
 }

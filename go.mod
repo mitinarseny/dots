@@ -10,7 +10,7 @@ require (
 	github.com/coreos/etcd v3.3.13+incompatible // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/coreos/go-systemd v0.0.0-20190612170431-362f06ec6bc1 // indirect
-	github.com/docker/cli v0.0.0-20190606190902-32d7596df6a9 // indirect
+	github.com/docker/cli v0.0.0-20190613135022-d7f806fa0023 // indirect
 	github.com/fatih/color v1.7.0 // indirect
 	github.com/go-critic/go-critic v0.3.4 // indirect
 	github.com/go-ole/go-ole v1.2.4 // indirect
@@ -35,7 +35,7 @@ require (
 	github.com/logrusorgru/aurora v0.0.0-20190428105938-cea283e61946 // indirect
 	github.com/magiconair/properties v1.8.1 // indirect
 	github.com/mattn/go-colorable v0.1.2 // indirect
-	github.com/mitinarseny/golog v0.0.0-20190614104227-d66084d8317c // indirect
+	github.com/mitinarseny/golog v0.0.0-20190614200913-b5d525982b20
 	github.com/nbutton23/zxcvbn-go v0.0.0-20180912185939-ae427f1e4c1d // indirect
 	github.com/onsi/ginkgo v1.8.0 // indirect
 	github.com/onsi/gomega v1.5.0 // indirect
@@ -64,8 +64,8 @@ require (
 	golang.org/x/mobile v0.0.0-20190607214518-6fa95d984e88 // indirect
 	golang.org/x/mod v0.1.0 // indirect
 	golang.org/x/net v0.0.0-20190613194153-d28f0bde5980 // indirect
-	golang.org/x/sys v0.0.0-20190614084037-d442b75600c5 // indirect
-	golang.org/x/tools v0.0.0-20190613204242-ed0dc450797f // indirect
+	golang.org/x/sys v0.0.0-20190614160838-b47fdc937951 // indirect
+	golang.org/x/tools v0.0.0-20190614192758-9a3b5d688fe6 // indirect
 	google.golang.org/appengine v1.6.1 // indirect
 	google.golang.org/genproto v0.0.0-20190611190212-a7e196e89fd3 // indirect
 	google.golang.org/grpc v1.21.1 // indirect

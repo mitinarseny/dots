@@ -4,10 +4,7 @@
     </a>
 </p>
 
-# dots
-
-[![Build Status](https://travis-ci.org/mitinarseny/dots.svg?branch=master)](https://travis-ci.org/mitinarseny/dots)
-[![Coverage Status](https://coveralls.io/repos/github/mitinarseny/dots/badge.svg?branch=master)](https://coveralls.io/github/mitinarseny/dots?branch=master)
+# dots [![Build Status](https://travis-ci.org/mitinarseny/dots.svg?branch=master)](https://travis-ci.org/mitinarseny/dots) [![Coverage Status](https://coveralls.io/repos/github/mitinarseny/dots/badge.svg?branch=master)](https://coveralls.io/github/mitinarseny/dots?branch=master)
 
 Delivery tool for your `.dotfiles`.
 

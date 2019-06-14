@@ -56,6 +56,15 @@ func (h *Host) Inspect() error {
 }
 
 func (h *Host) Up() error {
+	logger.Println( h.Name)
+	defer logger.SetPersistentPrefixf("%s | ")()
+
+	if h.Extends != nil {
+		if err := h.Extends.Up(); err != nil {
+			return err
+		}
+	}
+
 	if err := h.SetVariables(); err != nil {
 		return err
 	}
@@ -72,41 +81,23 @@ func (h *Host) Up() error {
 }
 
 func (h *Host) SetVariables() error {
-	logger.Println("Variables:")
-	defer logger.SetPrefix(logger.Prefix())
-	logger.SetPrefix(logger.Prefix() + stagePrefix)
+	if h.Variables == nil {
+		return nil
+	}
 
-	vars, err := h.CollectVariables()
+	logger.Println("Variables:")
+	defer logger.SetPrefixf(" ⚬ %s")()
+
+	vars, err := h.Variables.GenVariables()
 	if err != nil {
 		return err
 	}
-
 	return SetVariables(vars...)
-}
-
-func (h *Host) CollectVariables() ([]*Variable, error) {
-	var vars []*Variable
-	if h.Extends != nil && h.Extends.Variables != nil {
-		hostVars, err := h.Extends.CollectVariables()
-		if err != nil {
-			return nil, err
-		}
-		vars = append(vars, hostVars...)
-	}
-	if h.Variables != nil {
-		hostVars, err := h.Variables.GenVariables()
-		if err != nil {
-			return nil, err
-		}
-		vars = append(vars, hostVars...)
-	}
-	return vars, nil
 }
 
 func (h *Host) CreateLinks() error {
 	logger.Println("Links:")
-	defer logger.SetPrefix(logger.Prefix())
-	logger.SetPrefix(logger.Prefix() + stagePrefix)
+	defer logger.SetPrefixf(" ⚬ %s")()
 
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	defer cancelFunc()
@@ -126,14 +117,6 @@ func (h *Host) CreateLinks() error {
 
 func (h *Host) GenLinks(ctx context.Context) (<-chan *ToLink, error) {
 	var toLinkChs []<-chan *ToLink
-
-	if h.Extends != nil && h.Extends.Links != nil {
-		toLinkCh, err := h.Extends.GenLinks(ctx)
-		if err != nil {
-			return nil, err
-		}
-		toLinkChs = append(toLinkChs, toLinkCh)
-	}
 	if h.Links != nil {
 		for _, l := range *h.Links {
 			toLinkCh, err := l.GenLinks(ctx)
@@ -147,11 +130,12 @@ func (h *Host) GenLinks(ctx context.Context) (<-chan *ToLink, error) {
 }
 
 func (h *Host) ExecuteCommands() error {
+	if h.Commands == nil {
+		return nil
+	}
 	logger.Println("Commands:")
-	defer logger.SetPrefix(logger.Prefix())
-	logger.SetPrefix(logger.Prefix() + stagePrefix)
-
-	cmds, err := h.CollectCommands()
+	defer logger.SetPrefixf(" ⚬ %s")()
+	cmds, err := h.Commands.CollectCommands()
 	if err != nil {
 		return err
 	}
@@ -160,20 +144,7 @@ func (h *Host) ExecuteCommands() error {
 
 func (h *Host) CollectCommands() ([]*Command, error) {
 	var cmds []*Command
-	if h.Extends != nil && h.Extends.Commands != nil {
-		hostCmds, err := h.Extends.CollectCommands()
-		if err != nil {
-			return nil, err
-		}
-		cmds = append(cmds, hostCmds...)
-	}
-	if h.Commands != nil {
-		hostCmds, err := h.Commands.CollectCommands()
-		if err != nil {
-			return nil, err
-		}
-		cmds = append(cmds, hostCmds...)
-	}
+
 	return cmds, nil
 }
 
