@@ -181,12 +181,12 @@ type ToLink struct {
 func (t *ToLink) Link() error {
 	pathDir := path.Dir(t.Target)
 	if err := os.MkdirAll(pathDir, 0755); err != nil {
-		fmt.Printf("failed to create path: %s", pathDir)
+		logger.Printf("failed to create path: %s", pathDir)
 		return err
 	}
 	var buff bytes.Buffer
 	defer func() {
-		fmt.Println(buff.String())
+		logger.Println(buff.String())
 	}()
 
 	buff.WriteString(fmt.Sprintf("%s <- %s: ", t.Target, t.Source))

@@ -2,9 +2,12 @@ package core
 
 import (
 	"context"
-	"fmt"
 	"gopkg.in/yaml.v3"
 	"sync"
+)
+
+const (
+	stagePrefix = "  |  "
 )
 
 type Host struct {
@@ -53,17 +56,12 @@ func (h *Host) Inspect() error {
 }
 
 func (h *Host) Up() error {
-	fmt.Println("Variables:")
 	if err := h.SetVariables(); err != nil {
 		return err
 	}
-
-	fmt.Println("Links:")
 	if err := h.CreateLinks(); err != nil {
 		return err
 	}
-
-	fmt.Println("Commands:")
 	if err := h.ExecuteCommands(); err != nil {
 		return err
 	}
@@ -73,7 +71,43 @@ func (h *Host) Up() error {
 	return nil
 }
 
+func (h *Host) SetVariables() error {
+	logger.Println("Variables:")
+	defer logger.SetPrefix(logger.Prefix())
+	logger.SetPrefix(logger.Prefix() + stagePrefix)
+
+	vars, err := h.CollectVariables()
+	if err != nil {
+		return err
+	}
+
+	return SetVariables(vars...)
+}
+
+func (h *Host) CollectVariables() ([]*Variable, error) {
+	var vars []*Variable
+	if h.Extends != nil && h.Extends.Variables != nil {
+		hostVars, err := h.Extends.CollectVariables()
+		if err != nil {
+			return nil, err
+		}
+		vars = append(vars, hostVars...)
+	}
+	if h.Variables != nil {
+		hostVars, err := h.Variables.GenVariables()
+		if err != nil {
+			return nil, err
+		}
+		vars = append(vars, hostVars...)
+	}
+	return vars, nil
+}
+
 func (h *Host) CreateLinks() error {
+	logger.Println("Links:")
+	defer logger.SetPrefix(logger.Prefix())
+	logger.SetPrefix(logger.Prefix() + stagePrefix)
+
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	defer cancelFunc()
 
@@ -112,35 +146,11 @@ func (h *Host) GenLinks(ctx context.Context) (<-chan *ToLink, error) {
 	return mergeToLinkChs(ctx, toLinkChs...), nil
 }
 
-func (h *Host) SetVariables() error {
-	vars, err := h.CollectVariables()
-	if err != nil {
-		return err
-	}
-
-	return SetVariables(vars...)
-}
-
-func (h *Host) CollectVariables() ([]*Variable, error) {
-	var vars []*Variable
-	if h.Extends != nil && h.Extends.Variables != nil {
-		hostVars, err := h.Extends.CollectVariables()
-		if err != nil {
-			return nil, err
-		}
-		vars = append(vars, hostVars...)
-	}
-	if h.Variables != nil {
-		hostVars, err := h.Variables.GenVariables()
-		if err != nil {
-			return nil, err
-		}
-		vars = append(vars, hostVars...)
-	}
-	return vars, nil
-}
-
 func (h *Host) ExecuteCommands() error {
+	logger.Println("Commands:")
+	defer logger.SetPrefix(logger.Prefix())
+	logger.SetPrefix(logger.Prefix() + stagePrefix)
+
 	cmds, err := h.CollectCommands()
 	if err != nil {
 		return err

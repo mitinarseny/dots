@@ -102,6 +102,10 @@ func (v *Variable) UnmarshalYAML(value *yaml.Node) error {
 
 func (v *Variable) Set() error {
 	var buff bytes.Buffer
+	defer func() {
+		logger.Println(buff.String())
+	}()
+
 	buff.WriteString(fmt.Sprintf("%s=", v.Name))
 	if v.Command != nil {
 		buff.WriteString(fmt.Sprintf("$(%s) -> ", v.Command.String))
@@ -117,7 +121,6 @@ func (v *Variable) Set() error {
 	if err := os.Setenv(v.Name, *v.Value); err != nil {
 		return err
 	}
-	fmt.Println(buff.String())
 	return nil
 }
 

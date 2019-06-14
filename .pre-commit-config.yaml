@@ -1,0 +1,20 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.2.3
+    hooks:
+      - id: check-added-large-files
+      - id: check-case-conflict
+      - id:
+  - repo: git://github.com/dnephin/pre-commit-golang
+    rev: master
+    hooks:
+      - id: go-fmt
+      - id: go-vet
+      - id: go-lint
+      - id: validate-toml
+      - id: no-go-testing
+      - id: gometalinter
+      - id: golangci-lint
+      - id: go-critic
+      - id: go-unit-tests
+      - id: go-build
