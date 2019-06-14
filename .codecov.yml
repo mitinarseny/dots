@@ -1,0 +1,7 @@
+codecov:
+  branch: stable
+
+coverage:
+  range: 50..75
+  round: up
+  precision: 2

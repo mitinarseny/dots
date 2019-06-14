@@ -1,12 +1,16 @@
 <p align="center">
     <a href="https://github.com/mitinarseny/dots">
-        <img src="https://imgs.fontbrain.com/custom_imgs/1c/46/6999d56fdd69bc5f2220250209dd/td-720-60-b0f0441c91eba1a21c9840680e4f83ee@2x.png" alt="dots logo" />
+        <img src="asses/logo.png" alt="dots logo" />
     </a>
+    <h3 align="center">dots</h3>
+    <p align="center">Delivery tool for your <code>.dotfiles</code></p>
+    <p align="center">
+      <a href="https://github.com/mitinarseny/dots/releases/latest"><img alt="Release" src="https://img.shields.io/github/release/mitinarseny/dots.svg?style=flat-square"></a>
+      <a href="/LICENSE.md"><img alt="Software License" src="https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square"></a>
+      <a href="https://travis-ci.org/mitinarseny/dots"><img alt="TravisCI" src="https://img.shields.io/travis/mitinarseny/dots/master.svg?style=flat-square"></a>
+      <a href="https://codecov.io/gh/mitinarseny/dots"><img alt="Codecov branch" src="https://img.shields.io/codecov/c/github/mitinarseny/dots/master.svg?style=flat-square"></a> 
+    </p>
 </p>
-
-# dots [![Build Status](https://travis-ci.org/mitinarseny/dots.svg?branch=master)](https://travis-ci.org/mitinarseny/dots) [![Coverage Status](https://coveralls.io/repos/github/mitinarseny/dots/badge.svg?branch=master)](https://coveralls.io/github/mitinarseny/dots?branch=master)
-
-Delivery tool for your `.dotfiles`.
 
 ## Install
 
