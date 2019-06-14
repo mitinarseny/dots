@@ -1,6 +1,6 @@
 <p align="center">
     <a href="https://github.com/mitinarseny/dots">
-        <img src="asses/logo.png" alt="dots logo" />
+        <img src="assets/logo.png" alt="dots logo" />
     </a>
     <h3 align="center">dots</h3>
     <p align="center">Delivery tool for your <code>.dotfiles</code></p>
