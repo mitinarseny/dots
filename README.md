@@ -1,8 +1,8 @@
 <p align="center">
     <a href="https://github.com/mitinarseny/dots">
-        <img src="assets/logo.png" alt="dots logo" />
+        <img src="assets/logo.png" alt="dots logo" height="140" />
     </a>
-    <h3 align="center">dots</h3>
+    <h1 align="center">dots</h1>
     <p align="center">Delivery tool for your <code>.dotfiles</code></p>
     <p align="center">
       <a href="https://github.com/mitinarseny/dots/releases/latest"><img alt="Release" src="https://img.shields.io/github/release/mitinarseny/dots.svg?style=flat-square"></a>
