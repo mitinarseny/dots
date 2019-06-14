@@ -1,8 +1,8 @@
 <p align="center">
     <a href="https://github.com/mitinarseny/dots">
-        <img src="assets/logo.png" alt="dots logo" height="140" />
+        <img src="assets/logo.png" alt="dots logo" width="40%" />
     </a>
-    <h1 align="center">dots</h1>
+    <h3 align="center">dots</h3>
     <p align="center">Delivery tool for your <code>.dotfiles</code></p>
     <p align="center">
       <a href="https://github.com/mitinarseny/dots/releases/latest"><img alt="Release" src="https://img.shields.io/github/release/mitinarseny/dots.svg?style=flat-square"></a>
@@ -11,6 +11,8 @@
       <a href="https://codecov.io/gh/mitinarseny/dots"><img alt="Codecov branch" src="https://img.shields.io/codecov/c/github/mitinarseny/dots/master.svg?style=flat-square"></a> 
     </p>
 </p>
+
+---
 
 ## Install
 
