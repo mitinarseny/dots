@@ -16,8 +16,12 @@
 </p>
 
 ---
+## Table of Contents:
+* [Installation](#installation)
+* [Usage](#usage)
+* [Config file](#config-file)
 
-## Install
+## Installation
 
 ### macOS
 ```bash
@@ -30,22 +34,22 @@ To set variables, create symlinks and execute commands listed in [config](#confi
 dots up
 ```
 
-### Custom config file
+#### Custom config file
 By default [config](#config) file is `.dots.yaml` in current working directory.
 If you want to specify other location, pass it to `-c` flag:
 ```bash
 dots up -c custom/config.yaml
 ```
  
-### Specify hostname
+#### Specify hostname
 You are free to choose what host to up:
 ```bash
 dots up hostname
 ```
 The default hostname is `default`.
 
-## Config
-Config is a YAML file (defaults to `.dots.yaml` in current working directory).
+## Config file
+Config is a YAML file (defaults to `.dots.yaml` in current working directory).  
 An example config can be found in my [dotfiles](https://github.com/mitinarseny/dotfiles/blob/master/.dots.yaml).
   
 On top-level config consists of hosts:
