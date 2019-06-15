@@ -15,7 +15,7 @@
     </p>
 </p>
 
-![[dots demo](https://github.com/mitinarseny/dots)](assets/demo.gif)
+[![dots demo](assets/demo.gif)](https://github.com/mitinarseny/dotfiles/blob/master/.dots.yaml)
 
 ---
 
