@@ -48,28 +48,20 @@ The default hostname is `default`.
 Config is a YAML file (defaults to `.dots.yaml` in current working directory).
 An example config can be found in my [dotfiles](https://github.com/mitinarseny/dotfiles/blob/master/.dots.yaml).
   
-On top-level config consists of mapping of hostnames to `host`s:
+On top-level config consists of hosts:
 ```yaml
-hostname1:
-  # ...
-hostname2:
-  # ...
-```
-If not specifying the hostname when running `dots up`, default will be `default`.
-
-### `host` 
-Each `host` has the following structure:
-```yaml
-hostname:
-  extends: hostname
+host1:
   variables:
     # ...
   links:
     # ...
   commands:
     # ...
+host2:
+  extends: host1
+  # ...
 ```
-Each of fields can be omitted. 
+If not specifying the hostname when running `dots up`, the default will be `default`.
 
 ### `variables`
 This section consists of list of stages, while each stage consists of environment variables.
