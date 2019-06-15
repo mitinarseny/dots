@@ -20,9 +20,6 @@ cache:
     - $HOME/.cache/go-build
     - $HOME/gopath/pkg/mod
 
-before_install:
-  - go get -v ./...
-
 script:
   - go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
 
