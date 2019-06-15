@@ -10,8 +10,8 @@
       <a href="https://travis-ci.org/mitinarseny/dots"><img alt="TravisCI" src="https://img.shields.io/travis/mitinarseny/dots/master.svg?style=flat-square"></a>
       <a href="https://codecov.io/gh/mitinarseny/dots"><img alt="Codecov branch" src="https://img.shields.io/codecov/c/github/mitinarseny/dots/master.svg?style=flat-square"></a>
       <a href="http://godoc.org/github.com/mitinarseny/dots"><img alt="Go Doc" src="https://img.shields.io/badge/godoc-reference-blue.svg?style=flat-square"></a>
-      <a href="https://saythanks.io/to/mitinarseny"><img alt="SayThanks.io" src="https://img.shields.io/badge/say-thanks-ff69b4.svg?style=flat-square"></a>
-      <a href="https://houndci.com"><img alt="Reviewed by Hound" src="https://img.shields.io/badge/Reviewed_by-Hound-8E64B0.svg?style=flat-square&longCache=true"></a> 
+      <a href="https://saythanks.io/to/mitinarseny"><img alt="SayThanks.io" src="https://img.shields.io/badge/say-thanks-9933ff.svg?style=flat-square"></a>
+      <a href="https://houndci.com"><img alt="Reviewed by Hound" src="https://img.shields.io/badge/Reviewed_by-Hound-9933ff.svg?style=flat-square&longCache=true"></a> 
     </p>
 </p>
 
