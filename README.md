@@ -15,7 +15,10 @@
     </p>
 </p>
 
+[![dots demo](assets/demo.gif)](https://github.com/mitinarseny/dotfiles/blob/master/.dots.yaml)
+
 ---
+
 ## Table of Contents:
 * [Installation](#installation)
 * [Usage](#usage)
