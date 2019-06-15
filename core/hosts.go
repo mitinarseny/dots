@@ -16,7 +16,6 @@ type Host struct {
 	Variables *Variables
 	Links     *Links
 	Commands  *Commands
-	//Defaults  defaults.Defaults
 }
 
 type yamlHost struct {
@@ -24,7 +23,6 @@ type yamlHost struct {
 	Variables *Variables
 	Links     *Links
 	Commands  *Commands
-	//Defaults  defaults.Defaults
 }
 
 func (h *Host) UnmarshalYAML(value *yaml.Node) error {
@@ -38,7 +36,6 @@ func (h *Host) UnmarshalYAML(value *yaml.Node) error {
 	h.Variables = aux.Variables
 	h.Links = aux.Links
 	h.Commands = aux.Commands
-	//h.Defaults = aux.Defaults
 
 	return nil
 }
@@ -49,15 +46,22 @@ func (h *Host) Inspect() error {
 			return err
 		}
 	}
-
-	// TODO: inspect others
-
+	if h.Commands != nil {
+		if err := h.Commands.Inspect(); err != nil {
+			return err
+		}
+	}
+	if h.Variables != nil {
+		if err := h.Variables.Inspect(); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
 func (h *Host) Up() error {
-	logger.Println( h.Name)
-	defer logger.SetPersistentPrefixf("%s | ")()
+	logger.Println(h.Name)
+	defer logger.SetPersistentPrefixf("%s" + stagePrefix)()
 
 	if h.Extends != nil {
 		if err := h.Extends.Up(); err != nil {
@@ -74,8 +78,6 @@ func (h *Host) Up() error {
 	if err := h.ExecuteCommands(); err != nil {
 		return err
 	}
-
-	// TODO: other stages
 
 	return nil
 }

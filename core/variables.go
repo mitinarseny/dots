@@ -11,6 +11,15 @@ import (
 
 type Variables []VariableStage
 
+func (v *Variables) Inspect() error {
+	for _, vs := range *v {
+		if err := vs.Inspect(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (v *Variables) GenVariables() ([]*Variable, error) {
 	var vars []*Variable
 	for _, vs := range *v {
@@ -48,6 +57,15 @@ func (vs *VariableStage) UnmarshalYAML(value *yaml.Node) error {
 		(*vs)[varName] = variable
 	}
 
+	return nil
+}
+
+func (vs *VariableStage) Inspect() error {
+	for _, v := range *vs {
+		if err := v.Inspect(); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -98,6 +116,10 @@ func (v *Variable) UnmarshalYAML(value *yaml.Node) error {
 		return nil
 	}
 	return fmt.Errorf("variable should be <string>, or { value: <string> }, or { command: <command> }")
+}
+
+func (v *Variable) Inspect() error {
+	return v.Command.Inspect()
 }
 
 func (v *Variable) Set() error {
