@@ -15,7 +15,10 @@
     </p>
 </p>
 
+![[dots demo](https://github.com/mitinarseny/dots)](assets/demo.gif)
+
 ---
+
 ## Table of Contents:
 * [Installation](#installation)
 * [Usage](#usage)
