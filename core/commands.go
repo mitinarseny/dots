@@ -69,7 +69,7 @@ func (c *Command) WithString(s string) *Command {
 }
 
 func (c *Command) Execute() error {
-	defer logger.SetPrefixf("   %s")()
+	defer logger.SetPrefixf("%s | ")()
 
 	c.Cmd.Stdout = loggerWriter()
 

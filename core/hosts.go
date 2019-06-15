@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	stagePrefix = "  |  "
+	stagePrefix = " | "
 )
 
 type Host struct {
@@ -88,7 +88,7 @@ func (h *Host) SetVariables() error {
 	}
 
 	logger.Println("Variables:")
-	defer logger.SetPrefixf(" ⚬ %s")()
+	defer logger.SetPrefixf("  %s")()
 
 	vars, err := h.Variables.GenVariables()
 	if err != nil {
@@ -99,7 +99,7 @@ func (h *Host) SetVariables() error {
 
 func (h *Host) CreateLinks() error {
 	logger.Println("Links:")
-	defer logger.SetPrefixf(" ⚬ %s")()
+	defer logger.SetPrefixf("  %s")()
 
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	defer cancelFunc()
@@ -136,7 +136,7 @@ func (h *Host) ExecuteCommands() error {
 		return nil
 	}
 	logger.Println("Commands:")
-	defer logger.SetPrefixf(" ⚬ %s")()
+	defer logger.SetPrefixf("   %s")()
 	cmds, err := h.Commands.CollectCommands()
 	if err != nil {
 		return err
