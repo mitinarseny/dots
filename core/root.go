@@ -16,13 +16,14 @@ func (c *Config) UnmarshalYAML(value *yaml.Node) error {
 	}
 	*c = make(Config, len(aux))
 	for hostName, host := range aux {
-		if host.Extends != nil {
-			extendHost, ok := aux[host.Extends.Name]
+		for i, extendsHost := range host.Extends {
+			h, ok := aux[extendsHost.Name]
 			if !ok {
-				return fmt.Errorf("unable to extend %q with %q", host.Name, host.Extends.Name)
+				return fmt.Errorf("unable to extend %q with %q", host.Name, extendsHost.Name)
 			}
-			host.Extends = extendHost
+			host.Extends[i] = h
 		}
+
 		host.Name = hostName
 		(*c)[hostName] = host
 	}

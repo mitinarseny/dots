@@ -12,14 +12,14 @@ const (
 
 type Host struct {
 	Name      string
-	Extends   *Host
+	Extends   []*Host
 	Variables *Variables
 	Links     *Links
 	Commands  *Commands
 }
 
 type yamlHost struct {
-	Extends   *string
+	Extends   []string
 	Variables *Variables
 	Links     *Links
 	Commands  *Commands
@@ -30,9 +30,10 @@ func (h *Host) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(&aux); err != nil {
 		return err
 	}
-	if aux.Extends != nil {
-		h.Extends = &Host{Name: *aux.Extends}
+	for _, hostName := range aux.Extends {
+		h.Extends = append(h.Extends, &Host{Name: hostName})
 	}
+
 	h.Variables = aux.Variables
 	h.Links = aux.Links
 	h.Commands = aux.Commands
@@ -63,8 +64,8 @@ func (h *Host) Up() error {
 	logger.Println(h.Name)
 	defer logger.SetPersistentPrefixf("%s" + stagePrefix)()
 
-	if h.Extends != nil {
-		if err := h.Extends.Up(); err != nil {
+	for _, ex := range h.Extends {
+		if err := ex.Up(); err != nil {
 			return err
 		}
 	}
