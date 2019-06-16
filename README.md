@@ -65,7 +65,8 @@ host1:
   commands:
     # ...
 host2:
-  extends: host1
+  extends: 
+    - host1
   # ...
 ```
 If not specifying the hostname when running `dots up`, the default will be `default`.
