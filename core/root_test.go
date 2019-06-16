@@ -26,7 +26,8 @@ default:
       description: init bat cache
 
 macos:
-  extends: default
+  extends: 
+    - default
   variables:
     - HOME:
         command: echo ~
@@ -76,8 +77,10 @@ macos:
 	expected := Config{
 		"default": &dflt,
 		"macos": {
-			Name:    "macos",
-			Extends: &dflt,
+			Name: "macos",
+			Extends: []*Host{
+				&dflt,
+			},
 			Variables: &Variables{
 				{
 					"HOME": {
