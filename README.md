@@ -100,7 +100,7 @@ links:
   ~/dir1: dir1
   
   # create in ~/dir2/ the same structure as in .dir/ and link all .sh files
-  ~/dir2/: .dir/*.sh 
+  ~/dir2/: .dir/**.sh 
   # ...
 ``` 
 
