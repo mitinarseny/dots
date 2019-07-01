@@ -33,13 +33,13 @@ brew install mitinarseny/tap/dots
 ```
 
 ## Usage
-To set variables, create symlinks and execute commands listed in [config](#config) file run this: 
+To set variables, create symlinks and execute commands listed in [config](#config-file) file run this: 
 ```bash
 dots up
 ```
 
 #### Custom config file
-By default [config](#config) file is `.dots.yaml` in current working directory.
+By default [config](#config-file) file is `.dots.yaml` in current working directory.
 If you want to specify other location, pass it to `-c` flag:
 ```bash
 dots up -c custom/config.yaml
