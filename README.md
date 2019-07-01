@@ -101,7 +101,11 @@ links:
   ~/dir1: dir1
   
   # create in ~/dir2/ the same structure as in .dir/ and link all .sh files
-  ~/dir2/: .dir/**.sh 
+  ~/dir2/: .dir/**.sh
+  
+  ~/dir3/:
+    path: .dir/with/dirs/**
+    dirs: true # enforce to link directories and do not traverse files in them 
   # ...
 ``` 
 

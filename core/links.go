@@ -5,11 +5,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/gobwas/glob"
+	"gopkg.in/yaml.v3"
 )
 
 type Links map[string]*Link
@@ -49,6 +51,7 @@ type Link struct {
 	Target string
 	Path   string
 	Force  bool
+	Dirs   bool
 }
 
 type yamlLinkInline string
@@ -56,6 +59,7 @@ type yamlLinkInline string
 type yamlLinkExtended struct {
 	Path  *string
 	Force bool
+	Dirs  bool
 }
 
 func (l *Link) UnmarshalYAML(value *yaml.Node) error {
@@ -71,6 +75,7 @@ func (l *Link) UnmarshalYAML(value *yaml.Node) error {
 			l.Path = *aux.Path
 		}
 		l.Force = aux.Force
+		l.Dirs = aux.Dirs
 		return nil
 	}
 	return fmt.Errorf("link should be <string>, or { path: <string>, force: <bool> }")
@@ -89,31 +94,35 @@ func (l *Link) Inspect() error {
 	return nil
 }
 
-func (l *Link) GenLinks(ctx context.Context) (<-chan *ToLink, error) {
+func (l *Link) GenLinks(ctx context.Context) (<-chan *ToLink, <-chan error, error) {
 	targetExpanded, err := expandTilde(l.Target)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	absTargetExpanded, err := filepath.Abs(targetExpanded)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	absSource, err := filepath.Abs(l.Path)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
+	}
+
+	g, err := glob.Compile(absSource, os.PathSeparator)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	out := make(chan *ToLink)
+	errCh := make(chan error)
 
-	if strings.HasSuffix(absSource, string(os.PathSeparator)) {
-		absSource = absSource + "*"
-	}
 	if !isGlob(absSource) {
 		if strings.HasSuffix(l.Target, string(os.PathSeparator)) {
 			absTargetExpanded = path.Join(absTargetExpanded, filepath.Base(l.Path))
 		}
 		go func() {
 			defer close(out)
+			defer close(errCh)
 
 			select {
 			case out <- &ToLink{
@@ -125,22 +134,23 @@ func (l *Link) GenLinks(ctx context.Context) (<-chan *ToLink, error) {
 				return
 			}
 		}()
-		return out, nil
+		return out, errCh, nil
 	}
 
 	if !strings.HasSuffix(l.Target, string(os.PathSeparator)) {
-		return nil, errors.New("cannot link glob path to single file")
+		return nil, nil, errors.New("cannot link glob path to single file")
 	}
 
 	basePath := latestNoGlob(absSource)
-	sources, err := filepath.Glob(absSource)
-	if err != nil {
-		return nil, err
-	}
-	go func() {
-		defer close(out)
 
-		for _, source := range sources {
+	walker := func(source string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if g.Match(source) {
+			if info.IsDir() && !l.Dirs {
+				return nil
+			}
 			select {
 			case out <- &ToLink{
 				Source: source,
@@ -148,11 +158,25 @@ func (l *Link) GenLinks(ctx context.Context) (<-chan *ToLink, error) {
 				Force:  l.Force,
 			}:
 			case <-ctx.Done():
+				return nil
+			}
+		}
+		return nil
+	}
+
+	go func() {
+		defer close(out)
+		defer close(errCh)
+
+		if err := filepath.Walk(latestNoGlob(absSource), walker); err != nil {
+			select {
+			case errCh <- err:
+			case <-ctx.Done():
 				return
 			}
 		}
 	}()
-	return out, nil
+	return out, errCh, nil
 }
 
 func Linker(ctx context.Context, in <-chan *ToLink) (<-chan error, error) {
@@ -234,7 +258,7 @@ func expandTilde(path string) (string, error) {
 }
 
 func latestNoGlob(path string) string {
-	if !strings.ContainsAny(path, "*?[^]") {
+	if !strings.ContainsAny(path, "*?[]{}") {
 		return path
 	}
 	for dir := filepath.Dir(path); ; dir = filepath.Dir(dir) {

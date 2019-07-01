@@ -16,8 +16,9 @@ default:
       path: .gitexcludes
       force: true
     ~/.zsh/:
-      path: .zsh/*
+      path: .zsh/**
       force: true
+      dirs: true
 
   commands:
     - command: antibody bundle < zsh_plugins.txt > ~/.zsh_plugins.sh
@@ -59,8 +60,9 @@ macos:
 			},
 			"~/.zsh/": {
 				Target: "~/.zsh/",
-				Path:   ".zsh/*",
+				Path:   ".zsh/**",
 				Force:  true,
+				Dirs:true,
 			},
 		},
 		Commands: &Commands{

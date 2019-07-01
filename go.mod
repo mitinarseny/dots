@@ -3,6 +3,7 @@ module github.com/mitinarseny/dots
 go 1.12
 
 require (
+	github.com/gobwas/glob v0.2.3
 	github.com/mitinarseny/golog v0.0.0-20190614211018-f77cd4ea615d
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.4.0

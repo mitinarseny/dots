@@ -2,8 +2,9 @@ package core
 
 import (
 	"context"
-	"gopkg.in/yaml.v3"
 	"sync"
+
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -105,7 +106,7 @@ func (h *Host) CreateLinks() error {
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	defer cancelFunc()
 
-	toLinkCh, err := h.GenLinks(ctx)
+	toLinkCh, genErrCh, err := h.GenLinks(ctx)
 	if err != nil {
 		return err
 	}
@@ -115,21 +116,23 @@ func (h *Host) CreateLinks() error {
 		return err
 	}
 
-	return waitForPipeline(ctx, errCh)
+	return waitForPipeline(ctx, genErrCh, errCh)
 }
 
-func (h *Host) GenLinks(ctx context.Context) (<-chan *ToLink, error) {
+func (h *Host) GenLinks(ctx context.Context) (<-chan *ToLink, <-chan error, error) {
 	var toLinkChs []<-chan *ToLink
+	var errChs []<-chan error
 	if h.Links != nil {
 		for _, l := range *h.Links {
-			toLinkCh, err := l.GenLinks(ctx)
+			toLinkCh, errCh, err := l.GenLinks(ctx)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			toLinkChs = append(toLinkChs, toLinkCh)
+			errChs = append(errChs, errCh)
 		}
 	}
-	return mergeToLinkChs(ctx, toLinkChs...), nil
+	return mergeToLinkChs(ctx, toLinkChs...), mergeErrorChs(ctx, errChs...), nil
 }
 
 func (h *Host) ExecuteCommands() error {
