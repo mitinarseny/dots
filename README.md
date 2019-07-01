@@ -108,6 +108,7 @@ links:
     dirs: true # enforce to link directories and do not traverse files in them 
   # ...
 ``` 
+For more detailes on wildcards take a look an [standard wildcards](http://tldp.org/LDP/GNU-Linux-Tools-Summary/html/x11655.htm).
 
 ### `commands`
 This section is a list of commands to execute. Each command may have a `description`.
