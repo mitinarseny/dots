@@ -130,7 +130,9 @@ func (v *Variable) Set() error {
 
 	buff.WriteString(fmt.Sprintf("%s=", v.Name))
 	if v.Command != nil {
-		buff.WriteString(fmt.Sprintf("$(%s) -> ", v.Command.String))
+		if v.Command.String != nil {
+			buff.WriteString(fmt.Sprintf("$(%s) -> ", *v.Command.String))
+		}
 		var out buffer.Buffer
 		v.Command.Stdout = &out
 		if err := v.Command.Run(); err != nil {

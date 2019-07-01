@@ -21,13 +21,12 @@
 ---
 
 ## Table of Contents:
-* [Installation](#installation)
+* [Installation](#install)
 * [Usage](#usage)
 * [Config file](#config-file)
 
-## Installation
-
-### macOS
+## Install
+To install with [`brew`](https://brew.sh) run this in your terminal:
 ```bash
 brew install mitinarseny/tap/dots
 ```
@@ -115,7 +114,17 @@ This section is a list of commands to execute. Each command may have a `descript
 ```yaml
 commands:
   - echo command1
-  - command: echo command2
-    description: this
+
+  - description: simple description
+    command: echo command2
+  
+  - description: this is a parent command
+    command: echo "parent"
+    commands:
+      - description: this is a subcommand
+        command: echo "child1"
+        commands:
+          - description: this is a subsubcommand
+            command: echo "child2"
   # ... 
 ```

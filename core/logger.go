@@ -1,27 +1,28 @@
 package core
 
 import (
-	"bufio"
-	"github.com/mitinarseny/golog"
-	"io"
-	"log"
-	"os"
+    "bufio"
+    "io"
+    "log"
+    "os"
+
+    "github.com/mitinarseny/gol"
 )
 
 var (
-	logger = golog.New(log.New(os.Stdout, "", 0))
+    logger = gol.New(log.New(os.Stdout, "", 0))
 )
 
 func loggerWriter() io.Writer {
-	pipeReader, pipeWriter := io.Pipe()
+    pipeReader, pipeWriter := io.Pipe()
 
-	scanner := bufio.NewScanner(pipeReader)
-	scanner.Split(bufio.ScanLines)
+    scanner := bufio.NewScanner(pipeReader)
+    scanner.Split(bufio.ScanLines)
 
-	go func() {
-		for scanner.Scan() {
-			logger.Println(string(scanner.Bytes()))
-		}
-	}()
-	return pipeWriter
+    go func() {
+        for scanner.Scan() {
+            logger.Println(string(scanner.Bytes()))
+        }
+    }()
+    return pipeWriter
 }

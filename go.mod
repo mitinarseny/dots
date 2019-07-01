@@ -4,7 +4,7 @@ go 1.12
 
 require (
 	github.com/gobwas/glob v0.2.3
-	github.com/mitinarseny/golog v0.0.0-20190614211018-f77cd4ea615d
+	github.com/mitinarseny/gol v0.0.0-20190630155555-cda1a3d46740
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.4.0
 	github.com/stretchr/testify v1.3.0

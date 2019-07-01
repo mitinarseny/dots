@@ -94,6 +94,8 @@ func (l *Link) Inspect() error {
 	return nil
 }
 
+type AbortWalk error
+
 func (l *Link) GenLinks(ctx context.Context) (<-chan *ToLink, <-chan error, error) {
 	targetExpanded, err := expandTilde(l.Target)
 	if err != nil {
@@ -157,8 +159,11 @@ func (l *Link) GenLinks(ctx context.Context) (<-chan *ToLink, <-chan error, erro
 				Target: path.Join(absTargetExpanded, strings.TrimPrefix(source, basePath)),
 				Force:  l.Force,
 			}:
+				if info.IsDir() {
+					return filepath.SkipDir
+				}
 			case <-ctx.Done():
-				return nil
+				return AbortWalk(errors.New(""))
 			}
 		}
 		return nil
@@ -168,7 +173,10 @@ func (l *Link) GenLinks(ctx context.Context) (<-chan *ToLink, <-chan error, erro
 		defer close(out)
 		defer close(errCh)
 
-		if err := filepath.Walk(latestNoGlob(absSource), walker); err != nil {
+		switch err := filepath.Walk(latestNoGlob(absSource), walker); err.(type) {
+		case AbortWalk:
+			return
+		default:
 			select {
 			case errCh <- err:
 			case <-ctx.Done():

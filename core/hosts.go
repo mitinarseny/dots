@@ -148,12 +148,6 @@ func (h *Host) ExecuteCommands() error {
 	return ExecuteCommands(cmds...)
 }
 
-func (h *Host) CollectCommands() ([]*Command, error) {
-	var cmds []*Command
-
-	return cmds, nil
-}
-
 func waitForPipeline(ctx context.Context, errChs ...<-chan error) error {
 	ctx, cancelFunc := context.WithCancel(ctx)
 	defer cancelFunc()

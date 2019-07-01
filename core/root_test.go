@@ -1,9 +1,10 @@
 package core
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
-	"testing"
 )
 
 func TestUnmarshalRoot(t *testing.T) {
@@ -40,10 +41,12 @@ macos:
       path: subl/Preferences.sublime-settings
       force: true
   commands:
-    - defaults write -app iTerm PrefsCustomFolder $HOME/.iterm2_profile
-    - defaults write -app iTerm LoadPrefsFromCustomFolder -bool true
-    - command: defaults write -app Safari AllowJavaScriptFromAppleEvents 1
-      description: fix BeardedSpice
+    - description: Setting defaults
+      commands:
+        - defaults write -app iTerm PrefsCustomFolder $HOME/.iterm2_profile
+        - defaults write -app iTerm LoadPrefsFromCustomFolder -bool true
+        - command: defaults write -app Safari AllowJavaScriptFromAppleEvents 1
+          description: fix BeardedSpice
 `
 	dflt := Host{
 		Name: "default",
@@ -62,16 +65,16 @@ macos:
 				Target: "~/.zsh/",
 				Path:   ".zsh/**",
 				Force:  true,
-				Dirs:true,
+				Dirs:   true,
 			},
 		},
 		Commands: &Commands{
 			{
-				String:      "antibody bundle < zsh_plugins.txt > ~/.zsh_plugins.sh",
+				String:      sp("antibody bundle < zsh_plugins.txt > ~/.zsh_plugins.sh"),
 				Description: sp("load zsh plugins"),
 			},
 			{
-				String:      "bat cache --source .config/bat/ --build",
+				String:      sp("bat cache --source .config/bat/ --build"),
 				Description: sp("init bat cache"),
 			},
 		},
@@ -88,7 +91,7 @@ macos:
 					"HOME": {
 						Name: "HOME",
 						Command: &Command{
-							String: "echo ~",
+							String: sp("echo ~"),
 						},
 					},
 				},
@@ -107,14 +110,19 @@ macos:
 			},
 			Commands: &Commands{
 				{
-					String: "defaults write -app iTerm PrefsCustomFolder $HOME/.iterm2_profile",
-				},
-				{
-					String: "defaults write -app iTerm LoadPrefsFromCustomFolder -bool true",
-				},
-				{
-					String:      "defaults write -app Safari AllowJavaScriptFromAppleEvents 1",
-					Description: sp("fix BeardedSpice"),
+					Description: sp("Setting defaults"),
+					Commands: []*Command{
+						{
+							String: sp("defaults write -app iTerm PrefsCustomFolder $HOME/.iterm2_profile"),
+						},
+						{
+							String: sp("defaults write -app iTerm LoadPrefsFromCustomFolder -bool true"),
+						},
+						{
+							String:      sp("defaults write -app Safari AllowJavaScriptFromAppleEvents 1"),
+							Description: sp("fix BeardedSpice"),
+						},
+					},
 				},
 			},
 		},

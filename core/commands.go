@@ -1,15 +1,15 @@
 package core
 
 import (
-	"bytes"
 	"errors"
-	"fmt"
-	"gopkg.in/yaml.v3"
 	"os/exec"
+
+	"gopkg.in/yaml.v3"
 )
 
 const (
-	commandOutputPrefix = "  |  "
+	commandStringFormat = "> %s"
+	commandOutputPrefix = "%s| "
 )
 
 type Commands []*Command
@@ -28,29 +28,32 @@ func (c *Commands) CollectCommands() ([]*Command, error) {
 }
 
 type Command struct {
-	String      string
+	String      *string
 	Description *string
+	Commands    []*Command
 	*exec.Cmd
 }
 
 type yamlCommandInline string
 
 type yamlCommandExtended struct {
-	Command     yamlCommandInline
+	Command     *yamlCommandInline
 	Description *string
+	Commands    []*Command
 }
 
 func (c *Command) UnmarshalYAML(value *yaml.Node) error {
 	var auxInline yamlCommandInline
 	if err := value.Decode(&auxInline); err == nil {
-		c.String = string(auxInline)
+		c.String = (*string)(&auxInline)
 		return nil
 	}
 
 	var auxExtended yamlCommandExtended
 	if err := value.Decode(&auxExtended); err == nil {
-		c.String = string(auxExtended.Command)
+		c.String = (*string)(auxExtended.Command)
 		c.Description = auxExtended.Description
+		c.Commands = auxExtended.Commands
 		return nil
 	}
 
@@ -58,34 +61,51 @@ func (c *Command) UnmarshalYAML(value *yaml.Node) error {
 }
 
 func (c *Command) Inspect() error {
-	c.Cmd = exec.Command("sh", "-c", c.String)
+	if c.String != nil {
+		c.Cmd = exec.Command("/bin/sh", "-c", *c.String)
+	}
+	for _, subCmd := range c.Commands {
+		if err := subCmd.Inspect(); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
 func (c *Command) WithString(s string) *Command {
-	c.String = s
-	c.Cmd = exec.Command("sh", "-c", c.String)
+	c.String = &s
+	c.Cmd = exec.Command("sh", "-c", *c.String)
 	return c
 }
 
 func (c *Command) Execute() error {
-	defer logger.SetPrefixf("%s | ")()
+	if c.Description != nil {
+		logger.Printf("%s: ", *c.Description)
+	}
+	if c.Cmd != nil {
+		if c.String != nil {
+			logger.Printf(commandStringFormat, *c.String)
+		}
+		defer logger.SetPrefixf(commandOutputPrefix)()
 
-	c.Cmd.Stdout = loggerWriter()
+		c.Cmd.Stdout = loggerWriter()
 
-	if err := c.Cmd.Run(); err != nil {
-		return err
+		if err := c.Cmd.Run(); err != nil {
+			return err
+		}
+	}
+
+	defer logger.SetPrefixf("  %s")()
+	for _, subCmd := range c.Commands {
+		if err := subCmd.Execute(); err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 func ExecuteCommands(cmds ...*Command) error {
 	for _, c := range cmds {
-		var buff bytes.Buffer
-		if c.Description != nil {
-			buff.WriteString(fmt.Sprintf("%s: ", *c.Description))
-		}
-		logger.Println(buff.String() + c.String)
 		if err := c.Execute(); err != nil {
 			return err
 		}
