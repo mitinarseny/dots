@@ -94,7 +94,7 @@ links:
   
   ~/another/abs/tagret:
     path: another/rel/dest
-    force: true # ensures to recreate link if already exists
+    force: true # enforce to recreate link if already exists
     
   # link directory
   ~/dir1: dir1
